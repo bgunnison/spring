@@ -31,6 +31,11 @@ class Voice
 	void NoteOn(NoteOnEvent *p);
 	void NoteOff(NoteOffEvent *p);
 	
+	void SetCC0(uint8_t value);
+	void SetCC1(uint8_t value);
+	void SetCC2(uint8_t value);
+	void SetCC3(uint8_t value);
+	
 	void SetAccent(float set);
 	
 	void SetDamping(float set);
@@ -57,9 +62,25 @@ class Voice
 	Note notes[POLYPHONY];
 
 	Oscillator synth[POLYPHONY];
+	Adsr adsr[POLYPHONY]; // synth voice only
+
+	bool ADSROn;
+	float GetCCMinMax(uint8_t CCValue, float min, float max);
+	void SetADSRAttackCC(uint8_t value);
+	float ADSRAttack;
+	void SetADSRDecayCC(uint8_t value);
+	float ADSRDecay;
+	void SetADSRSustainCC(uint8_t value);
+	float ADSRSustain;
+	void SetADSRReleaseCC(uint8_t value);
+	float ADSRRelease;
+	
 	StringVoice spring[POLYPHONY];
 	float accent; // string voice only
 	float damping; //string voice only
+	float structure;
+	float brightness;
+
 	
 };
 

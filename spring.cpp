@@ -17,10 +17,13 @@ Svf        filt;
 float sampleRate;
 float finalGain;
 
+uint32_t noteCounter = 0;
+
 
 void logMidiNote(MidiEvent *m)
 {	
-	log("Note Received:\t%d\t%d\t%d\r\n", m->channel, m->data[0], m->data[1]);
+	log("%d - Note Received:\t%d\t%d\t%d\r\n", noteCounter, m->channel, m->data[0], m->data[1]);
+	noteCounter++;
 }
 
 
@@ -63,10 +66,12 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 // Typical Switch case for Message Type.
 void HandleMidiMessage(MidiEvent m)
 {
+	
 	switch (m.type)
 	{
 	case NoteOn:
 		{
+			logMidiNote(&m);
 			NoteOnEvent p = m.AsNoteOn();
 			
     		RotateLED(2);
@@ -92,6 +97,7 @@ void HandleMidiMessage(MidiEvent m)
 		{
 			ControlChangeEvent p = m.AsControlChange();
 			//log("CC: %d, v: %d", p.control_number, p.value);
+			
 			switch (p.control_number)
 			{
 			case 7:
@@ -99,9 +105,13 @@ void HandleMidiMessage(MidiEvent m)
 				break;
 				
 			case 20:
-				// CC cutoff.
-				filt.SetFreq(mtof((float)p.value));
-				break;
+				{
+					// CC cutoff.
+					//f must be between 0.0 and sample_rate / 3
+					float f = (float)p.value / 127.0f * sampleRate / 3.0f;
+					filt.SetFreq(f);
+					break;
+				}
 				
 			case 21:
 				// CC res.
@@ -109,17 +119,24 @@ void HandleMidiMessage(MidiEvent m)
 				break;
 				
 			case 22:
-				// string sustain
-				voice.SetAccent((float)p.value / 127.0f);
+				voice.SetCC0(p.value);
+				break;
+
+			case 23:
+				voice.SetCC1(p.value);
 				break;
 				
-			case 23:
-				// string sustain
-				voice.SetDamping((float)p.value / 127.0f);
+			case 24:
+				voice.SetCC2(p.value);
+				break;
+				
+			case 25:
+				voice.SetCC3(p.value);
 				break;
 
 				
-			default: break;
+			default: 
+				break;
 			}
 			break;
 		}
@@ -138,22 +155,24 @@ int main(void)
 	hw.seed.usb_handle.Init(UsbHandle::FS_INTERNAL);
 	System::Delay(250);
 
-	//hw.seed.StartLog(false);
-	// Synthesis
+	//log("Init start");
+	
 	sampleRate = hw.AudioSampleRate();
 	voice.Init(&hw, sampleRate);
 	
 	filt.Init(sampleRate);
+	filt.SetFreq(sampleRate / 3.0f);
+	filt.SetRes(0.2);
 	
 	finalGain = 1.0;
+	
+	//log("Init end");
 
 	// Start stuff.
 	hw.StartAdc();
 	hw.StartAudio(AudioCallback);
 	hw.midi.StartReceive();
 
-	uint32_t peakUs = 0;
-	uint32_t startUs = hw.seed.system.GetUs();
 	
 	for (;;)
 	{
