@@ -154,6 +154,7 @@ float Voice::Process(void)
 			
 		case SPRING_VOICE:
 			sig += spring[i].Process() * notes[i].amplitude;
+			sig *= 2;
 			break;
 	
 		default:
@@ -255,6 +256,35 @@ void Voice::SetDamping(float set)
 	}
 }
 
+
+void Voice::SetStructure(float set)
+{
+	if (set == structure)
+	{
+		return;
+	}
+	
+	structure = set;
+	for (uint8_t i = 0; i < POLYPHONY; i++)
+	{
+		spring[i].SetStructure(structure);
+	}
+}
+
+
+void Voice::SetBrightness(float set)
+{
+	if (set == brightness)
+	{
+		return;
+	}
+	
+	brightness = set;
+	for (uint8_t i = 0; i < POLYPHONY; i++)
+	{
+		spring[i].SetBrightness(brightness);
+	}
+}
 
 
 float Voice::GetCCMinMax(uint8_t CCValue, float min, float max)

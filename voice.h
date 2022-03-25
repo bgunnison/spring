@@ -36,10 +36,6 @@ class Voice
 	void SetCC2(uint8_t value);
 	void SetCC3(uint8_t value);
 	
-	void SetAccent(float set);
-	
-	void SetDamping(float set);
-
 
 	private:
 	
@@ -76,9 +72,13 @@ class Voice
 	float ADSRRelease;
 	
 	StringVoice spring[POLYPHONY];
+	void SetAccent(float set);
 	float accent; // string voice only
+	void SetDamping(float set);
 	float damping; //string voice only
+	void SetStructure(float set);
 	float structure;
+	void SetBrightness(float set);
 	float brightness;
 
 	
