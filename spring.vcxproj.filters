@@ -5,19 +5,8 @@
       <UniqueIdentifier>{aedbbfb4-8227-479e-b283-6d1037a14359}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header files">
-      <UniqueIdentifier>{af3833bf-843a-4ddc-8d80-24a39882a8b5}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource files">
-      <UniqueIdentifier>{df755e5e-c993-4c22-9791-c6d646897a24}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
-    </Filter>
     <Filter Include="Source files\Device-specific files">
       <UniqueIdentifier>{5c5b1df9-c196-4dd3-8db4-7299867dc4a3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header files\Device-specific files">
-      <UniqueIdentifier>{be40ddae-9ef3-4000-b7bd-e241ae24afa4}</UniqueIdentifier>
     </Filter>
     <Filter Include="VisualGDB settings">
       <UniqueIdentifier>{8358fbbb-ab20-4b03-b7f7-8056691f1398}</UniqueIdentifier>
@@ -33,6 +22,9 @@
     </None>
     <None Include="spring-Release.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
+    </None>
+    <None Include="serial_monitor.py">
+      <Filter>Source files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -53,12 +45,24 @@
     <ClCompile Include="utilities.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="filter.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="oscvoice.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="springvoice.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="voice.h">
       <Filter>Source files</Filter>
     </ClInclude>
     <ClInclude Include="utilities.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="filter.h">
       <Filter>Source files</Filter>
     </ClInclude>
   </ItemGroup>

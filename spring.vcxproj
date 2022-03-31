@@ -57,6 +57,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="serial_monitor.py" />
     <None Include="spring-Debug.vgdbsettings" />
     <None Include="spring-Release.vgdbsettings" />
     <None Include="stm32.props" />
@@ -74,11 +75,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\daisyexamples\libDaisy\core\startup_stm32h750xx.c" />
+    <ClCompile Include="filter.cpp" />
+    <ClCompile Include="oscvoice.cpp" />
     <ClCompile Include="spring.cpp" />
+    <ClCompile Include="springvoice.cpp" />
     <ClCompile Include="utilities.cpp" />
     <ClCompile Include="voice.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="filter.h" />
     <ClInclude Include="utilities.h" />
     <ClInclude Include="voice.h" />
   </ItemGroup>

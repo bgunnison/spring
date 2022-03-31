@@ -101,3 +101,10 @@ void LEDOff(uint8_t led)
 }
 
 
+
+float GetCCMinMax(uint8_t CCValue, float min, float max)
+{
+	float v = (float)CCValue / 127.0f;
+	float ret = min + ((max - min) * v);
+	return ret;
+}

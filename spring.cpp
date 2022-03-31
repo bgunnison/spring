@@ -5,24 +5,28 @@
 
 #include "utilities.h"
 #include "voice.h"
+#include "filter.h"
 
 using namespace daisy;
 using namespace daisysp;
 
+#define MIDI_CHANNEL 0
+
 DaisyPod   hw;
 
-Voice voice;
-Svf        filt;
+Voices  voice;
+Filters filt;
 
 float sampleRate;
 float finalGain;
 
 uint32_t noteCounter = 0;
+uint32_t outClipIndicator = 0;
 
 
 void logMidiNote(MidiEvent *m)
 {	
-	log("%d - Note Received:\t%d\t%d\t%d\r\n", noteCounter, m->channel, m->data[0], m->data[1]);
+	log("%d - Note Received:\t%d\t%d\t%d", noteCounter, m->channel, m->data[0], m->data[1]);
 	noteCounter++;
 }
 
@@ -33,17 +37,14 @@ void UpdateControls()
 	hw.ProcessDigitalControls();
 
 	// returns 0 - 1.0
-	finalGain = hw.knob1.Process();
-	//float max_f = sampleRate / 3.0;
-	//filt.SetFreq(k1 * max_f);
-	
-	//float k2 = hw.knob2.Process();
-	//filt.SetRes(k2);
-	
-	//voice.SetAccent(k2);
+	finalGain = hw.knob1.Process() * 4;
 	
 	//Returns + 1 if the encoder was turned clockwise, -1 if it was turned counter - clockwise, or 0 if it was not just turned.
-	voice.Select(hw.encoder.Increment());	
+	//voice.Select(hw.encoder.Increment());	}
+	
+	// use button1 for voice select
+	voice.Select(hw.button1.RisingEdge());
+	filt.Select(hw.button2.RisingEdge());
 }
 
 
@@ -57,21 +58,30 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 
 	for (size_t i = 0; i < size; i += 2)
 	{
-		sig = voice.Process();		
-		filt.Process(sig); 
-		out[i] = out[i + 1] = filt.Low() * finalGain;
+		sig = filt.Process(voice.Process()) * finalGain; 
+		
+		if (sig > 1.0)
+		{
+			outClipIndicator++;
+		}
+		
+		out[i] = out[i + 1] = sig;
 	}
 }
 
 // Typical Switch case for Message Type.
 void HandleMidiMessage(MidiEvent m)
 {
+	if (m.channel != MIDI_CHANNEL)
+	{
+		return;
+	}
 	
 	switch (m.type)
 	{
 	case NoteOn:
 		{
-			logMidiNote(&m);
+			//logMidiNote(&m);
 			NoteOnEvent p = m.AsNoteOn();
 			
     		RotateLED(2);
@@ -86,6 +96,7 @@ void HandleMidiMessage(MidiEvent m)
 		break;
 
 	case NoteOff:
+		//logMidiNote(&m);
 		if (m.data[1] != 0)
 		{
 			NoteOffEvent p = m.AsNoteOff();
@@ -105,17 +116,12 @@ void HandleMidiMessage(MidiEvent m)
 				break;
 				
 			case 20:
-				{
-					// CC cutoff.
-					//f must be between 0.0 and sample_rate / 3
-					float f = (float)p.value / 127.0f * sampleRate / 3.0f;
-					filt.SetFreq(f);
-					break;
-				}
+				filt.SetCC0(p.value);
+				break;
 				
 			case 21:
 				// CC res.
-				filt.SetRes(((float)p.value / 127.0f));
+				filt.SetCC1(p.value);
 				break;
 				
 			case 22:
@@ -161,8 +167,6 @@ int main(void)
 	voice.Init(&hw, sampleRate);
 	
 	filt.Init(sampleRate);
-	filt.SetFreq(sampleRate / 3.0f);
-	filt.SetRes(0.2);
 	
 	finalGain = 1.0;
 	
@@ -184,5 +188,14 @@ int main(void)
 		}
 				
 		voice.UpdateBackGround();
+		if (outClipIndicator > 0)
+		{
+			hw.seed.SetLed(true);
+			outClipIndicator--;
+		}
+		else
+		{
+			hw.seed.SetLed(false);
+		}
 	}
 }
