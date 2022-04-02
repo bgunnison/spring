@@ -12,6 +12,7 @@ public:
 	virtual void SetRes(float r) {}
 	virtual void SetFreq(float f) {}
 	virtual float Process(float in) { return in; }	
+	
 };
 
 
@@ -36,7 +37,7 @@ public:
 	void Init(float sampleRate) {filter.Init(sampleRate); }
 	void SetRes(float r) { filter.SetRes(r); }
 	void SetFreq(float f) { filter.SetFreq(f); }
-	float Process(float in) { return filter.Process(in);  }	
+	float Process(float in) { return filter.Process(in) * 4;  }	// moog filter seems to have a gain issue
 	
 private:
 	MoogLadder	filter;	

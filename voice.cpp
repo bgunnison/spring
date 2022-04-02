@@ -10,6 +10,7 @@ using namespace daisysp;
 void NullVoice::Init(float SR)
 {
 	sampleRate = SR;
+	polyphony = 0;
 	Panic();
 }
 
@@ -17,7 +18,7 @@ void NullVoice::Panic()
 {
 	//log("Null voice Panic");
 	
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < MAX_POLYPHONY; i++)
 	{
 		notes[i].amplitude = 0.0;
 		notes[i].midiNote = 0;

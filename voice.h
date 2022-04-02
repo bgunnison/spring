@@ -3,9 +3,11 @@
 
 using namespace daisy;
 using namespace daisysp;
-
-#define POLYPHONY 4
-
+// springvoice is 92% CPU usage constant with moog filter, overload (no midi) if set to 5. 
+#define SPRING_VOICE_POLYPHONY	4
+#define OSC_VOICE_POLYPHONY		8 // 18% cpu usage with moog filter
+// we have to instantiate max
+#define MAX_POLYPHONY			OSC_VOICE_POLYPHONY
 
 typedef struct
 {	
@@ -31,11 +33,10 @@ public:
 	virtual void Panic();
 	
 protected:
-	float sampleRate;
 	
-	Note notes[POLYPHONY];
-
-
+	float sampleRate;
+	uint8_t polyphony;
+	Note notes[MAX_POLYPHONY];
 };
 
 
@@ -56,8 +57,8 @@ public:
 	void Panic() override;
 	
 private:
-	Oscillator synth[POLYPHONY];
-	Adsr adsr[POLYPHONY]; 
+	Oscillator synth[MAX_POLYPHONY];
+	Adsr adsr[MAX_POLYPHONY]; 
 	
 	void StartNote(uint8_t i, NoteOnEvent *p);
 
@@ -92,7 +93,7 @@ public:
 	
 private:
 	
-	StringVoice spring[POLYPHONY];
+	StringVoice spring[MAX_POLYPHONY];
 	
 	void StartNote(uint8_t i, NoteOnEvent *p);
 	

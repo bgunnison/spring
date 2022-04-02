@@ -10,8 +10,9 @@ using namespace daisysp;
 void SpringVoice::Init(float SR) 
 {
 	NullVoice::Init(SR);
+	polyphony = SPRING_VOICE_POLYPHONY;
 	
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].Init(sampleRate);
 	}	
@@ -23,7 +24,7 @@ void SpringVoice::Panic()
 {
 	NullVoice::Panic();
 	
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].Reset();
 	}
@@ -43,7 +44,7 @@ void SpringVoice::StartNote(uint8_t i, NoteOnEvent *p)
 
 void SpringVoice::NoteOn(NoteOnEvent *p)
 {
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		
 		if (notes[i].midiNote == p->note)
@@ -65,7 +66,7 @@ void SpringVoice::NoteOn(NoteOnEvent *p)
 
 void SpringVoice::NoteOff(NoteOffEvent *p)
 {
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		if (notes[i].midiNote == p->note)
 		{
@@ -78,12 +79,12 @@ void SpringVoice::NoteOff(NoteOffEvent *p)
 float SpringVoice::Process(void) 
 {
 	float sig = 0;
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		sig += spring[i].Process() * notes[i].amplitude;
 	}
 	
-	return sig / POLYPHONY;
+	return sig / polyphony;
 }
 	
 void SpringVoice::SetCC0(uint8_t value)
@@ -117,7 +118,7 @@ void SpringVoice::SetDampingCC(uint8_t value)
 	}
 	
 	damping = set;
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetDamping(damping);
 	}
@@ -133,7 +134,7 @@ void SpringVoice::SetStructureCC(uint8_t value)
 	}
 	
 	structure = set;
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetStructure(structure);
 	}
@@ -149,7 +150,7 @@ void SpringVoice::SetBrightnessCC(uint8_t value)
 	}
 	
 	brightness = set;
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetBrightness(brightness);
 	}
@@ -165,7 +166,7 @@ void SpringVoice::SetAccentCC(uint8_t value)
 	}
 	
 	accent = set;
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetAccent(accent);
 	}

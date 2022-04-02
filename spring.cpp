@@ -11,6 +11,7 @@ using namespace daisy;
 using namespace daisysp;
 
 #define MIDI_CHANNEL 0
+#define AUDIO_BLOCK_SIZE 48
 
 DaisyPod   hw;
 
@@ -22,6 +23,11 @@ float finalGain;
 
 uint32_t noteCounter = 0;
 uint32_t outClipIndicator = 0;
+
+CpuLoadMeter loadMeter;
+uint8_t currentCpuLoad = 0;
+
+Parameter volumePot;
 
 
 void logMidiNote(MidiEvent *m)
@@ -36,8 +42,8 @@ void UpdateControls()
 	hw.ProcessAnalogControls();
 	hw.ProcessDigitalControls();
 
-	// returns 0 - 1.0
-	finalGain = hw.knob1.Process() * 4;
+	// returns 0 - max
+	finalGain = volumePot.Process();
 	
 	//Returns + 1 if the encoder was turned clockwise, -1 if it was turned counter - clockwise, or 0 if it was not just turned.
 	//voice.Select(hw.encoder.Increment());	}
@@ -53,6 +59,7 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 	size_t                                size)
 {
 	float sig = 0;
+	loadMeter.OnBlockStart();
 	
 	UpdateControls();
 
@@ -67,6 +74,11 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 		
 		out[i] = out[i + 1] = sig;
 	}
+	
+	loadMeter.OnBlockEnd();
+	
+	currentCpuLoad = (uint8_t)(loadMeter.GetAvgCpuLoad() * 100);
+
 }
 
 // Typical Switch case for Message Type.
@@ -157,7 +169,7 @@ int main(void)
 {
 	// Init
 	hw.Init();
-	hw.SetAudioBlockSize(4);
+	hw.SetAudioBlockSize(AUDIO_BLOCK_SIZE);
 	hw.seed.usb_handle.Init(UsbHandle::FS_INTERNAL);
 	System::Delay(250);
 
@@ -168,18 +180,34 @@ int main(void)
 	
 	filt.Init(sampleRate);
 	
+	loadMeter.Init(sampleRate, AUDIO_BLOCK_SIZE);
+	
+	volumePot.Init(hw.knob1, 0, 8, Parameter::LOGARITHMIC);
+	
 	finalGain = 1.0;
 	
-	//log("Init end");
+	log("Init end");
 
 	// Start stuff.
 	hw.StartAdc();
 	hw.StartAudio(AudioCallback);
 	hw.midi.StartReceive();
 
+	uint8_t cpuLoad = 0;
 	
+	uint32_t now = 0;
 	for (;;)
 	{
+		
+		uint32_t tp = System::GetNow() - now;
+		if (tp > 5000)
+		{
+			now = System::GetNow();
+			loadMeter.Reset();
+			cpuLoad = currentCpuLoad;
+			log("Ave CPU load Peak: %d", cpuLoad);
+		}
+		
 		hw.midi.Listen();
 		// Handle MIDI Events
 		while (hw.midi.HasEvents())
@@ -197,5 +225,6 @@ int main(void)
 		{
 			hw.seed.SetLed(false);
 		}
+		
 	}
 }

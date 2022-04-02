@@ -25,13 +25,14 @@ using namespace daisysp;
 void OscVoice::Init(float SR) 
 {
 	NullVoice::Init(SR);
+	polyphony = OSC_VOICE_POLYPHONY;
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
 	ADSRDecay = ADSR_DECAY_DEFAULT;
 	ADSRSustain = ADSR_SUSTAIN_DEFAULT;
 	ADSRRelease = ADSR_RELEASE_DEFAULT;
 	
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		synth[i].Init(sampleRate);
 		synth[i].SetWaveform(Oscillator::WAVE_POLYBLEP_SAW);
@@ -51,7 +52,7 @@ void OscVoice::Panic()
 {
 	NullVoice::Panic();
 	
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		synth[i].SetAmp(0);
 		adsr[i].Process(false);	
@@ -73,7 +74,7 @@ void OscVoice::StartNote(uint8_t i, NoteOnEvent *p)
 
 void OscVoice::NoteOn(NoteOnEvent *p)
 {
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		if (notes[i].midiNote == p->note)
 		{
@@ -94,7 +95,7 @@ void OscVoice::NoteOn(NoteOnEvent *p)
 
 void OscVoice::NoteOff(NoteOffEvent *p)
 {
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		if (notes[i].midiNote == p->note)
 		{
@@ -112,7 +113,7 @@ void OscVoice::NoteOff(NoteOffEvent *p)
 float OscVoice::Process(void) 
 {
 	float sig = 0;
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		bool attack = true;
 		if (notes[i].midiNote == 0)
@@ -128,7 +129,7 @@ float OscVoice::Process(void)
 		sig += synth[i].Process() * ADSRLevel;
 	}
 	
-	return sig / POLYPHONY;
+	return sig / polyphony;
 }
 	
 void OscVoice::SetCC0(uint8_t value)
@@ -163,7 +164,7 @@ void OscVoice::SetADSRAttackCC(uint8_t value)
 	ADSRAttack = a;
 	//log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
 	
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		adsr[i].SetTime(ADSR_SEG_ATTACK, ADSRAttack); 
 	}
@@ -180,7 +181,7 @@ void OscVoice::SetADSRDecayCC(uint8_t value)
 	ADSRDecay = d;
 	//log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
 	
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		adsr[i].SetTime(ADSR_SEG_DECAY, ADSRDecay); 
 	}
@@ -207,7 +208,7 @@ void OscVoice::SetADSRSustainCC(uint8_t value)
 	ADSRSustain = s;
 	//log("Sustain: %d", (uint32_t)(ADSRSustain * 1000));
 
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		adsr[i].SetTime(ADSR_SEG_IDLE, ADSRSustain); 
 	}
@@ -223,7 +224,7 @@ void OscVoice::SetADSRReleaseCC(uint8_t value)
 	ADSRRelease = r;
 	//log("Release: %d", (uint32_t)(ADSRRelease * 1000));
 
-	for (uint8_t i = 0; i < POLYPHONY; i++)
+	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		adsr[i].SetTime(ADSR_SEG_RELEASE, ADSRRelease); 
 	}
