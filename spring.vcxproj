@@ -76,6 +76,8 @@
   <ItemGroup>
     <ClCompile Include="..\daisyexamples\libDaisy\core\startup_stm32h750xx.c" />
     <ClCompile Include="filter.cpp" />
+    <ClCompile Include="malletvoice.cpp" />
+    <ClCompile Include="midimap.cpp" />
     <ClCompile Include="oscvoice.cpp" />
     <ClCompile Include="spring.cpp" />
     <ClCompile Include="springvoice.cpp" />
@@ -84,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="filter.h" />
+    <ClInclude Include="midimap.h" />
     <ClInclude Include="utilities.h" />
     <ClInclude Include="voice.h" />
   </ItemGroup>

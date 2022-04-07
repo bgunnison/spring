@@ -33,6 +33,8 @@ void Voices::Init(DaisyPod *pod, float SR)
 	currentVoiceSelector = 0; 
 	oscVoice.Init(sampleRate);
 	springVoice.Init(sampleRate);
+	malletVoice.Init(sampleRate);
+	
 	pvoice = &oscVoice;
 }
 
@@ -80,6 +82,11 @@ void Voices::Select(int8_t sel)
 		pvoice = &springVoice;
 		break;
 		
+	case MALLET_VOICE:
+		log("Mallet voice");
+		pvoice = &malletVoice;
+		break;
+		
 	default:
 		log("Unused voice");
 		break;
@@ -98,8 +105,12 @@ void Voices::UpdateBackGround(void)
 		phw->led1.Set(0.0, 0.0, 1.0);
 		break;
 			
-	default:
+	case MALLET_VOICE:
 		phw->led1.Set(1.0, 0.0, 0.0);
+		break;
+		
+	default:
+		phw->led1.Set(0.0, 0.0, 0.0);
 		break;
 	}
 		

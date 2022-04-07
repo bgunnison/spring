@@ -52,31 +52,6 @@ def list_serial_ports():
         continue
 
 
-def list_serial_ports():
-    """
-    prints out a list of available serial ports
-    """
-    try:
-        ports = serial.tools.list_ports.comports()
-    except:
-        fatal_exit('Error listing COM ports')
-
-
-    my_port = None
-    for port in ports:
-        try:
-            my_port = serial.Serial(port=port.device, baudrate=SERIAL_PORT_SPEED)
-        except:
-            log(f'Cannot open port "{port}", make sure no other apps have this port open')
-            continue    # try next port
-
-        log(f'Port "{port}" available')
-        
-        my_port.close()
-        my_port = None
-        continue
-
-
 def open_serial_port(port_name=SERIAL_PORT_NAME, port_speed=SERIAL_PORT_SPEED):
     """
     Opens a serial COM port
@@ -97,29 +72,9 @@ def open_serial_port(port_name=SERIAL_PORT_NAME, port_speed=SERIAL_PORT_SPEED):
 
 
 
-def send_command(port, cmd):
-    """
-    Sends device command wrapped in DT protocol
-    :param cmd:
-    :return:
-    """
-    if port is None or port.is_open == False:
-        fatal_exit('Port is not opened?')
-
-    try:
-        # send the properly encoded string out the serial port
-        port.write(cmd.encode('utf-8')) 
-        port.flush()        # make sure the buffered command is sent now
-    except:
-        fatal_exit('Serial write failed')
-
-    log('Command sent') 
-
-
-
 def get_response(port):
     """
-    reads a message from the pump, parses it and prints the results
+    reads a message and prints the results
     """
     if port is None or port.is_open == False:
         fatal_exit('Port is not opened?')
@@ -151,8 +106,6 @@ def get_response(port):
     return response
 
    
-
-
 def run_monitor():
 
     log('List available serial ports')

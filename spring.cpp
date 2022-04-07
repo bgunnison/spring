@@ -6,6 +6,7 @@
 #include "utilities.h"
 #include "voice.h"
 #include "filter.h"
+//#include "midimap.h"
 
 using namespace daisy;
 using namespace daisysp;
@@ -29,10 +30,43 @@ uint8_t currentCpuLoad = 0;
 
 Parameter volumePot;
 
+CCMIDIMap ccmap;
+PCMIDIMap pcmap;
+CCMIDINoteMap noteMap;
 
-void logMidiNote(MidiEvent *m)
+
+void logMidiEvent(MidiEvent *m)
 {	
-	log("%d - Note Received:\t%d\t%d\t%d", noteCounter, m->channel, m->data[0], m->data[1]);
+	if (m->type == NoteOn)
+	{
+		NoteOnEvent p = m->AsNoteOn();
+		log("%d - Note on:\t%d\t%d\t%d", noteCounter, p.channel, p.note, p.velocity);	
+		noteCounter++;
+	}
+	
+	if (m->type == NoteOff)
+	{
+		NoteOffEvent p = m->AsNoteOff();
+		log("%d - Note off:\t%d\t%d\t%d", noteCounter, p.channel, p.note, p.velocity);	
+		noteCounter--;
+	}
+	
+	if (m->type == ControlChange)
+	{
+		ControlChangeEvent p = m->AsControlChange();
+		 
+		log("%d - CC:\t%d\t%d\t%d", noteCounter, p.channel, p.control_number, p.value);	
+	}
+	
+	if (m->type == ProgramChange)
+	{
+		ProgramChangeEvent  p = m->AsProgramChange();
+		 
+		log("%d - PG:\t%d\t%d\t%d", noteCounter, p.channel, p.program);	
+	}
+	
+	
+
 	noteCounter++;
 }
 
@@ -84,10 +118,11 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 // Typical Switch case for Message Type.
 void HandleMidiMessage(MidiEvent m)
 {
-	if (m.channel != MIDI_CHANNEL)
-	{
-		return;
-	}
+	logMidiEvent(&m);
+	//if (m.channel != MIDI_CHANNEL)
+	//{
+	//	return;
+	//}
 	
 	switch (m.type)
 	{
@@ -95,74 +130,35 @@ void HandleMidiMessage(MidiEvent m)
 		{
 			//logMidiNote(&m);
 			NoteOnEvent p = m.AsNoteOn();
-			
-    		RotateLED(2);
-
-			// This is to avoid Max/MSP Note outs for now..
-			if (m.data[1] != 0)
-			{
-				p = m.AsNoteOn();
-				voice.NoteOn(&p); 
-			}
+			RotateLED(2);
+			p = m.AsNoteOn();
+			p.note = noteMap.Process(p.note);
+			voice.NoteOn(&p); 					
 		}
 		break;
 
 	case NoteOff:
-		//logMidiNote(&m);
-		if (m.data[1] != 0)
 		{
 			NoteOffEvent p = m.AsNoteOff();
 			voice.NoteOff(&p);
+			break;
 		}
-		break;
 
 	case ControlChange:
 		{
 			ControlChangeEvent p = m.AsControlChange();
-			//log("CC: %d, v: %d", p.control_number, p.value);
-			
-			switch (p.control_number)
-			{
-			case 7:
-				finalGain = float(p.value) / 127.0f;
-				break;
-				
-			case 20:
-				filt.SetCC0(p.value);
-				break;
-				
-			case 21:
-				// CC res.
-				filt.SetCC1(p.value);
-				break;
-				
-			case 22:
-				voice.SetCC0(p.value);
-				break;
-
-			case 23:
-				voice.SetCC1(p.value);
-				break;
-				
-			case 24:
-				voice.SetCC2(p.value);
-				break;
-				
-			case 25:
-				voice.SetCC3(p.value);
-				break;
-
-				
-			default: 
-				break;
-			}
-			break;
+			log("CC: %d, v: %d", p.control_number, p.value);
+			ccmap.Invoke(p.control_number, p.value);
+			noteMap.Invoke(p.control_number, p.value);		
 		}
 	default: break;
 	}
 }
 
-
+void SetCCFinalGain(uint8_t value)
+{
+	finalGain = float(value) / 127.0f;
+}
 
 // Main -- Init, and Midi Handling
 int main(void)
@@ -182,7 +178,15 @@ int main(void)
 	
 	loadMeter.Init(sampleRate, AUDIO_BLOCK_SIZE);
 	
+	// allow clipping and adjust for low volume voices
 	volumePot.Init(hw.knob1, 0, 8, Parameter::LOGARITHMIC);
+	
+	ccmap.Init();
+	pcmap.Init();
+	noteMap.Init();
+	
+	//ccmap.Add(7, SetCCFinalGain);
+	SetAlesisV125MIDIMap(&ccmap, &noteMap, &voice, &filt);
 	
 	finalGain = 1.0;
 	

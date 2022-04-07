@@ -1,6 +1,9 @@
 #include "daisy_pod.h"
 #include "daisysp.h"
 
+#include "midimap.h"
+
+
 using namespace daisy;
 using namespace daisysp;
 
@@ -46,8 +49,7 @@ private:
 
 
 // a container for filters
-
-class Filters
+class Filters : public CCMIDIMapable
 {
 public:
 	Filters() {}
@@ -61,6 +63,9 @@ public:
 	
 	void SetCC0(uint8_t value);
 	void SetCC1(uint8_t value);
+	
+	void CCProcess(uint8_t ccFuncNumber, uint8_t value);
+
 	
 
 private:

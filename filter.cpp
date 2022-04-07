@@ -98,3 +98,22 @@ void Filters::SetCC1(uint8_t value)
 	SetResCC(value);
 }
 
+void Filters::CCProcess(uint8_t ccFuncNumber, uint8_t value)
+{
+	switch (ccFuncNumber)
+	{
+	case 0:
+		SetFreqCC(value);
+		break;
+		
+	case 1:
+		SetResCC(value);
+		break;
+		
+	default:
+		break;
+		
+	}
+}
+
+

@@ -1,10 +1,14 @@
 #include "daisy_pod.h"
 #include "daisysp.h"
 
+#include "midimap.h"
+
+
 using namespace daisy;
 using namespace daisysp;
 // springvoice is 92% CPU usage constant with moog filter, overload (no midi) if set to 5. 
 #define SPRING_VOICE_POLYPHONY	4
+#define MALLET_VOICE_POLYPHONY	2 // 98% with moog filter
 #define OSC_VOICE_POLYPHONY		8 // 18% cpu usage with moog filter
 // we have to instantiate max
 #define MAX_POLYPHONY			OSC_VOICE_POLYPHONY
@@ -109,9 +113,43 @@ private:
 };
 
 
+class MalletVoice : public NullVoice
+{
+public:
+	void Init(float SR) override;
+	float Process() override;
+	
+	virtual void NoteOn(NoteOnEvent *p) override;
+	virtual void NoteOff(NoteOffEvent *p) override;
+	
+	void SetCC0(uint8_t value) override;
+	void SetCC1(uint8_t value) override;
+	void SetCC2(uint8_t value) override;
+	void SetCC3(uint8_t value) override;
+	
+	void Panic() override;
+	
+private:
+	
+	ModalVoice mallet[MAX_POLYPHONY];
+	
+	void StartNote(uint8_t i, NoteOnEvent *p);
+	
+	void SetAccentCC(uint8_t value);
+	float accent; // string voice only
+	void SetDampingCC(uint8_t value);
+	float damping; //string voice only
+	void SetStructureCC(uint8_t value);
+	float structure;
+	void SetBrightnessCC(uint8_t value);
+	float brightness;
+
+};
+
+
 // a container for voices
 
-class Voices
+class Voices : public CCMIDIMapable
 {
 	public:
 	Voices() {}
@@ -145,13 +183,15 @@ class Voices
 	typedef enum
 	{
 		SYNTH_VOICE,
-		SPRING_VOICE
+		SPRING_VOICE,
+		MALLET_VOICE
 	}VOICE_TYPE;
 	
-	#define NUM_VOICES 2
+	#define NUM_VOICES 3
 	
 	OscVoice	oscVoice;
 	SpringVoice springVoice;
+	MalletVoice malletVoice;
 	
 	NullVoice *pvoice;
 	
