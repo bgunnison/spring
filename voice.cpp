@@ -43,6 +43,40 @@ void Voices::Panic(void)
 	pvoice->Panic();
 }
 
+void Voices::ChangeVoice(uint8_t sel)
+{
+	
+	if (sel != currentVoiceSelector)
+	{
+		Panic();
+	}
+	
+	currentVoiceSelector = sel;
+	
+	switch (sel)
+	{
+	case SYNTH_VOICE:
+		log("Synth voice");
+		pvoice = &oscVoice;
+		break;
+		
+	case SPRING_VOICE:
+		log("Spring voice");
+		pvoice = &springVoice;
+		break;
+		
+	case MALLET_VOICE:
+		log("Mallet voice");
+		pvoice = &malletVoice;
+		break;
+		
+	default:
+		log("Unused voice");
+		break;
+	}
+}	
+
+// button or knob selector
 void Voices::Select(int8_t sel)
 {
 	if (sel == 0)
@@ -70,27 +104,9 @@ void Voices::Select(int8_t sel)
 	
 	currentVoiceSelector = s;
 	
-	switch (currentVoiceSelector)
-	{
-	case SYNTH_VOICE:
-		log("Synth voice");
-		pvoice = &oscVoice;
-		break;
-		
-	case SPRING_VOICE:
-		log("Spring voice");
-		pvoice = &springVoice;
-		break;
-		
-	case MALLET_VOICE:
-		log("Mallet voice");
-		pvoice = &malletVoice;
-		break;
-		
-	default:
-		log("Unused voice");
-		break;
-	}	
+	ChangeVoice(currentVoiceSelector);
+	
+	
 }
 
 void Voices::UpdateBackGround(void)
@@ -155,5 +171,45 @@ void Voices::SetCC2(uint8_t value)
 void Voices::SetCC3(uint8_t value)
 {	
 	pvoice->SetCC3(value);
+}
+
+
+// CCMIDIMap map parms or selector
+void Voices::CCProcess(uint8_t ccFuncNumber, uint8_t value)
+{
+	switch (ccFuncNumber)
+	{
+	case 0:
+		pvoice->SetCC0(value);
+		break;
+		
+	case 1:
+		pvoice->SetCC1(value);
+		break;
+		
+	case 2:
+		pvoice->SetCC2(value);
+		break;
+	case 3:
+		pvoice->SetCC3(value);
+		break;
+		
+	case 10:
+		ChangeVoice(SYNTH_VOICE);
+		break;
+		
+	case 11:
+		ChangeVoice(SPRING_VOICE);
+		break;
+		
+	case 12:
+		ChangeVoice(MALLET_VOICE);
+		break;
+
+
+	default:
+		break;
+		
+	}
 }
 	

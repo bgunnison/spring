@@ -1,3 +1,5 @@
+#pragma once
+
 #include "daisy_pod.h"
 #include "daisysp.h"
 

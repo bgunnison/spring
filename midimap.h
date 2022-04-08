@@ -3,6 +3,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "utilities.h"
 
 // A class inherits from this the method CCProcess which maps a enumerated CC function which is then called with the CC value
 class CCMIDIMapable
@@ -124,7 +125,9 @@ public:
 		uint8_t oct = noteIn / 12; //truncation towards zero
 		uint8_t n = noteIn - (oct * 12);
 	
-		return root + (oct * MajorPentNoteMap[n]);
+		uint8_t noteOut = root + (oct * 12) + MajorPentNoteMap[n];
+		log("noteIn: %d, NoteOut: %d", noteIn, noteOut);
+		return noteOut;
 	}
 
 private:

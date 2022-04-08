@@ -19,27 +19,21 @@ void SetFCB1010MIDIMap(CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapab
 
 void SetAlesisV125MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt)
 {
-	noteMap->Add(50, &DMajorPentNoteMap);
+	// 48 voice select
+	ccmap->Add(10, 48, voice); // voice 1
+	ccmap->Add(11, 49, voice);
+	ccmap->Add(12, 50, voice);
+	// 56 filter select
+	
+	// 64 note map select
+	noteMap->Add(64, &DMajorPentNoteMap); //button CC 50 to D major pentatonic
 	
 	ccmap->Add(0, 20, filt); // freq to CC 20
 	ccmap->Add(1, 21, filt); // resonance to CC 21
 	
-	/*		
-				
-case 22:
-	voice.SetCC0(p.value);
-	break;
-
-case 23:
-	voice.SetCC1(p.value);
-	break;
-				
-case 24:
-	voice.SetCC2(p.value);
-	break;
-				
-case 25:
-	voice.SetCC3(p.value);
-	break;
-*/
+	// voice parameter change
+	ccmap->Add(0, 22, voice); //voice 0 to CC 22
+	ccmap->Add(1, 23, voice); 
+	ccmap->Add(2, 24, voice); 
+	ccmap->Add(3, 25, voice); 
 }

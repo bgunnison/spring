@@ -1,3 +1,5 @@
+#pragma once
+
 #include "daisy_pod.h"
 #include "daisysp.h"
 
@@ -171,6 +173,9 @@ class Voices : public CCMIDIMapable
 	void SetCC2(uint8_t value);
 	void SetCC3(uint8_t value);
 	
+	void CCProcess(uint8_t ccFuncNumber, uint8_t value);
+
+	
 	private:
 	
 	DaisyPod *phw;
@@ -188,6 +193,9 @@ class Voices : public CCMIDIMapable
 	}VOICE_TYPE;
 	
 	#define NUM_VOICES 3
+	
+	void ChangeVoice(uint8_t sel);
+
 	
 	OscVoice	oscVoice;
 	SpringVoice springVoice;

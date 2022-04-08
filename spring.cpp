@@ -140,6 +140,7 @@ void HandleMidiMessage(MidiEvent m)
 	case NoteOff:
 		{
 			NoteOffEvent p = m.AsNoteOff();
+			p.note = noteMap.Process(p.note);
 			voice.NoteOff(&p);
 			break;
 		}
