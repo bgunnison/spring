@@ -83,6 +83,9 @@ private:
 	
 	#define NUM_FILTERS 3
 	
+	void ChangeFilter(uint8_t sel);
+
+	
 	NullFilter	nfilter;
 	SVFilter	sfilter;
 	MoogFilter	mfilter;

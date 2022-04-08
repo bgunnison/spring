@@ -20,6 +20,32 @@ void Filters::Init(float sr)
 }
 
 
+void Filters::ChangeFilter(uint8_t sel)
+{
+	currentFilterSelector = sel;
+	
+	switch (currentFilterSelector)
+	{
+	case SV_FILTER:
+		log("SV filter");
+		pfilter = &sfilter;
+		break;
+		
+	case MOOG_FILTER:
+		log("Moog filter");
+		pfilter = &mfilter;
+		break;
+
+	case NO_FILTER:
+		log("No filter");
+		pfilter = &nfilter;
+		break;
+
+	default:
+		log("Unknown filter");
+		break;
+	}
+}	
 void Filters::Select(int8_t sel)
 {
 	if (sel == 0)
@@ -43,27 +69,8 @@ void Filters::Select(int8_t sel)
 	
 	currentFilterSelector = s;
 	
-	switch (currentFilterSelector)
-	{
-	case SV_FILTER:
-		log("SV filter");
-		pfilter = &sfilter;
-		break;
-		
-	case MOOG_FILTER:
-		log("Moog filter");
-		pfilter = &mfilter;
-		break;
-
-	case NO_FILTER:
-		log("No filter");
-		pfilter = &nfilter;
-		break;
-
-	default:
-		log("Unknown filter");
-		break;
-	}	
+	ChangeFilter(currentFilterSelector);
+	
 }
 
 
@@ -109,6 +116,20 @@ void Filters::CCProcess(uint8_t ccFuncNumber, uint8_t value)
 	case 1:
 		SetResCC(value);
 		break;
+		
+	case 10:
+		ChangeFilter(NO_FILTER);
+		break;
+		
+	case 11:
+		ChangeFilter(SV_FILTER);
+		break;
+		
+	case 12:
+		ChangeFilter(MOOG_FILTER);
+		break;
+
+
 		
 	default:
 		break;

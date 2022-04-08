@@ -118,7 +118,7 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 // Typical Switch case for Message Type.
 void HandleMidiMessage(MidiEvent m)
 {
-	logMidiEvent(&m);
+	//logMidiEvent(&m);
 	//if (m.channel != MIDI_CHANNEL)
 	//{
 	//	return;
@@ -148,7 +148,7 @@ void HandleMidiMessage(MidiEvent m)
 	case ControlChange:
 		{
 			ControlChangeEvent p = m.AsControlChange();
-			log("CC: %d, v: %d", p.control_number, p.value);
+			//log("CC: %d, v: %d", p.control_number, p.value);
 			ccmap.Invoke(p.control_number, p.value);
 			noteMap.Invoke(p.control_number, p.value);		
 		}

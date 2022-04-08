@@ -33,7 +33,7 @@ void MalletVoice::Panic()
 
 void MalletVoice::StartNote(uint8_t i, NoteOnEvent *p)
 {
-	log("n: %d, m: %d", i, p->note);
+	//log("n: %d, m: %d", i, p->note);
 	notes[i].midiNote = p->note;
 	notes[i].amplitude = (float)p->velocity / 127.0f;
 			
