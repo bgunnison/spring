@@ -5,6 +5,10 @@
 
 *3/7/2022 Brian Gunnison*
 
+[Music](https://soundcloud.com/briang-1-1)
+
+[Virtual Robot](https://virtualrobot.net/)
+
 ## Overview
 
 An experimental software platform based on the Daisy Pod HW and software libraries:
