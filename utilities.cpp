@@ -1,8 +1,31 @@
 
+/*
+ This file is part of Virtual Robot's Pine Synthesizer. 
+
+Copyright <2022> <Brian Gunnison>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this 
+software and associated documentation files (the "Software"), to deal in the Software 
+without restriction, including without limitation the rights to use, copy, modify, 
+merge, publish, distribute, sublicense, and/or sell copies of the Software, and to 
+permit persons to whom the Software is furnished to do so, subject to the following 
+conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 #include "daisy_pod.h"
 #include "daisysp.h"
 #include <stdio.h>
 #include <string.h>
+#include "utilities.h"
 
 using namespace daisy;
 using namespace daisysp;
@@ -23,6 +46,45 @@ void log(const char* format, ...)
 	
 	hw.seed.usb_handle.TransmitInternal((uint8_t *)buff, strlen(buff));
 }
+
+
+// todo class up and implement midi map parser as well as commands such as get current settings etc. 
+// UsbHandle::ReceiveCallback
+void echo_rx_callback(uint8_t* buf, uint32_t* len)
+{
+	// do nothing
+	char inBuf[32];
+	
+	if (len == NULL || buf == NULL)
+	{
+		return;
+	}
+	
+	uint32_t l = *len;
+	uint8_t i = 0;
+	for ( i < l; i++;)
+	{
+		inBuf[i] = buf[i];
+		if (i == 32)
+		{
+			break;
+		}
+	}
+	
+	inBuf[i - 1] = 0;
+		
+	log(inBuf);
+	
+	
+}
+
+void ComInit(DaisyPod *hw)
+{
+	hw->seed.usb_handle.Init(UsbHandle::FS_INTERNAL);
+	System::Delay(250);
+	hw->seed.usb_handle.SetReceiveCallback( echo_rx_callback, UsbHandle::FS_INTERNAL);
+}
+
 
 
 void RotateRGB(float &r, float &g, float &b)

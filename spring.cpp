@@ -1,12 +1,35 @@
-#include "daisy_pod.h"
-#include "daisysp.h"
+
+/*
+ This file is part of Virtual Robot's Pine Synthesizer. 
+
+Copyright <2022> <Brian Gunnison>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this 
+software and associated documentation files (the "Software"), to deal in the Software 
+without restriction, including without limitation the rights to use, copy, modify, 
+merge, publish, distribute, sublicense, and/or sell copies of the Software, and to 
+permit persons to whom the Software is furnished to do so, subject to the following 
+conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 #include <stdio.h>
 #include <string.h>
-
+#include "daisy_pod.h"
+#include "daisysp.h"
 #include "utilities.h"
 #include "voice.h"
 #include "filter.h"
-//#include "midimap.h"
+#include "midimap.h"
 
 using namespace daisy;
 using namespace daisysp;
@@ -15,9 +38,13 @@ using namespace daisysp;
 #define AUDIO_BLOCK_SIZE 48
 
 DaisyPod   hw;
-
+CpuLoadMeter loadMeter;
 Voices  voice;
 Filters filt;
+Parameter volumePot;
+CCMIDIMap ccmap;
+PCMIDIMap pcmap;
+CCMIDINoteMap noteMap;
 
 float sampleRate;
 float finalGain;
@@ -25,14 +52,8 @@ float finalGain;
 uint32_t noteCounter = 0;
 uint32_t outClipIndicator = 0;
 
-CpuLoadMeter loadMeter;
 uint8_t currentCpuLoad = 0;
 
-Parameter volumePot;
-
-CCMIDIMap ccmap;
-PCMIDIMap pcmap;
-CCMIDINoteMap noteMap;
 
 
 void logMidiEvent(MidiEvent *m)
@@ -167,8 +188,7 @@ int main(void)
 	// Init
 	hw.Init();
 	hw.SetAudioBlockSize(AUDIO_BLOCK_SIZE);
-	hw.seed.usb_handle.Init(UsbHandle::FS_INTERNAL);
-	System::Delay(250);
+	ComInit(&hw);
 
 	//log("Init start");
 	
@@ -180,7 +200,7 @@ int main(void)
 	loadMeter.Init(sampleRate, AUDIO_BLOCK_SIZE);
 	
 	// allow clipping and adjust for low volume voices
-	volumePot.Init(hw.knob1, 0, 8, Parameter::LOGARITHMIC);
+	volumePot.Init(hw.knob1, 0, 16, Parameter::LOGARITHMIC);
 	
 	ccmap.Init();
 	pcmap.Init();
