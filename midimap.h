@@ -121,7 +121,8 @@ typedef enum
 // major pent: root, 2nd, 3rd, 5th, and 6th intervals
 // C	C#	D	D#	E	F	F#	G	G#	A	A#	B
 // 0    1   2   3   4   5   6   7   8   9   10  11
-// 0    0   2   2   5   5   6   6   9   9   12  12
+// 0    0   2   2   5   5   6   6   9   9   12  12 <- one way to do it, but
+// 0    2   5   6   9   12  14  17  ... <- root is C, this is a better way
 
 
 class MIDINoteMap
@@ -155,7 +156,7 @@ public:
 private:
 	NOTE_MAP_TYPE type;
 	uint8_t root;
-	uint8_t MajorPentNoteMap[12] = { 0,    0,   2,   2,   5,   5,   6,   6,   9,   9,   12,  12 };
+	uint8_t MajorPentNoteMap[5] = { 0, 2, 5, 6, 9 }; 
 };
 
 

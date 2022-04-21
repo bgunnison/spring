@@ -34,6 +34,7 @@ using namespace daisysp;
 #define SPRING_VOICE_POLYPHONY	4
 #define MALLET_VOICE_POLYPHONY	2 // 98% with moog filter
 #define OSC_VOICE_POLYPHONY		8 // 18% cpu usage with moog filter
+#define HIHAT_VOICE_POLYPHONY   2
 // we have to instantiate max
 #define MAX_POLYPHONY			OSC_VOICE_POLYPHONY
 
@@ -126,9 +127,9 @@ private:
 	void StartNote(uint8_t i, NoteOnEvent *p);
 	
 	void SetAccentCC(uint8_t value);
-	float accent; // string voice only
+	float accent; 
 	void SetDampingCC(uint8_t value);
-	float damping; //string voice only
+	float damping; 
 	void SetStructureCC(uint8_t value);
 	float structure;
 	void SetBrightnessCC(uint8_t value);
@@ -160,15 +161,52 @@ private:
 	void StartNote(uint8_t i, NoteOnEvent *p);
 	
 	void SetAccentCC(uint8_t value);
-	float accent; // string voice only
+	float accent; 
 	void SetDampingCC(uint8_t value);
-	float damping; //string voice only
+	float damping; 
 	void SetStructureCC(uint8_t value);
 	float structure;
 	void SetBrightnessCC(uint8_t value);
 	float brightness;
 
 };
+
+
+class HiHatVoice : public NullVoice
+{
+public:
+	void Init(float SR) override;
+	float Process() override;
+	
+	virtual void NoteOn(NoteOnEvent *p) override;
+	virtual void NoteOff(NoteOffEvent *p) override;
+	
+	void SetCC0(uint8_t value) override;
+	void SetCC1(uint8_t value) override;
+	void SetCC2(uint8_t value) override;
+	void SetCC3(uint8_t value) override;
+	
+	void Panic() override;
+	
+private:
+	// or <RingModNoise> - This is much more hihat, but much less tonal
+	HiHat<SquareNoise> hihat[MAX_POLYPHONY];
+	
+	void StartNote(uint8_t i, NoteOnEvent *p);
+	
+	void SetAccentCC(uint8_t value);
+	float accent; 
+	void SetSustainCC(uint8_t value); // bool
+	bool sustain; 
+	void SetDecayCC(uint8_t value);
+	float decay; 
+	void SetToneCC(uint8_t value);
+	float tone;
+	void SetNoisinessCC(uint8_t value);
+	float noisiness;
+
+};
+
 
 
 // a container for voices
@@ -211,10 +249,11 @@ class Voices : public CCMIDIMapable
 	{
 		SYNTH_VOICE,
 		SPRING_VOICE,
-		MALLET_VOICE
+		MALLET_VOICE,
+		HIHAT_VOICE
 	}VOICE_TYPE;
 	
-	#define NUM_VOICES 3
+	#define NUM_VOICES 4
 	
 	void ChangeVoice(uint8_t sel);
 
@@ -222,6 +261,7 @@ class Voices : public CCMIDIMapable
 	OscVoice	oscVoice;
 	SpringVoice springVoice;
 	MalletVoice malletVoice;
+	HiHatVoice  hihatVoice;
 	
 	NullVoice *pvoice;
 	

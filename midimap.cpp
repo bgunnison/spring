@@ -47,6 +47,7 @@ void SetAlesisV125MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapabl
 	ccmap->Add(10, 48, voice); // voice 1
 	ccmap->Add(11, 49, voice);
 	ccmap->Add(12, 50, voice);
+	ccmap->Add(13, 51, voice);
 	
 	// 56 filter select
 	ccmap->Add(10, 56, filt); // no filt
