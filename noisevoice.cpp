@@ -30,7 +30,52 @@ using namespace daisy;
 using namespace daisysp;
 
 
-// ADSR for synth voice ranges
+void NoiseFilter::Init(float sampleRate, int32_t seed)
+{
+	wn.Init(seed);
+	for (uint8_t i = 0; i < NUM_FILTERS; i++)
+	{
+		filter[i].Init(sampleRate);
+	}
+}
+
+
+float NoiseFilter::Process()
+{
+	float w = wn.Process();
+	filter[0].Process(w);
+	filter[1].Process(filter[0].Band()); 
+	float o = filter[1].Band();
+	return o;
+}
+	
+void NoiseFilter::SetFreq(float freq)
+{
+	for (uint8_t i = 0; i < NUM_FILTERS; i++)
+	{
+		filter[i].SetFreq(freq);
+	}
+}
+
+void NoiseFilter::SetResonance(float res)
+{
+	for (uint8_t i = 0; i < NUM_FILTERS; i++)
+	{
+		filter[i].SetRes(res);
+	}
+}
+
+void NoiseFilter::SetDrive(float drive)
+{
+	for (uint8_t i = 0; i < NUM_FILTERS; i++)
+	{
+		filter[i].SetDrive(drive);
+	}
+}
+
+
+
+// ADSR settings
 #define ADSR_ATTACK_MIN			0.01f
 #define ADSR_ATTACK_DEFAULT		0.1f
 #define ADSR_ATTACK_MAX			5.0f
@@ -44,21 +89,26 @@ using namespace daisysp;
 #define ADSR_RELEASE_DEFAULT	0.2f
 #define ADSR_RELEASE_MAX		20.0f
 
-void OscVoice::Init(float SR) 
+void NoiseVoice::Init(float SR) 
 {
 	NullVoice::Init(SR);
-	polyphony = OSC_VOICE_POLYPHONY;
+	polyphony = NOISE_VOICE_POLYPHONY;
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
 	ADSRDecay = ADSR_DECAY_DEFAULT;
 	ADSRSustain = ADSR_SUSTAIN_DEFAULT;
 	ADSRRelease = ADSR_RELEASE_DEFAULT;
 	
+	resonance = 0.8;
+	drive = 0.5;
+	
+	int32_t seed = 7;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		synth[i].Init(sampleRate);
-		synth[i].SetWaveform(Oscillator::WAVE_POLYBLEP_SAW);
-		synth[i].SetAmp(0);
+		noise[i].Init(SR, seed + (i * seed)); // i is seed
+		noise[i].SetAmp(0);
+		noise[i].SetDrive(drive);
+		noise[i].SetResonance(resonance);
 		
 		adsr[i].Init(sampleRate);
 		adsr[i].SetTime(ADSR_SEG_ATTACK, ADSRAttack);
@@ -70,31 +120,31 @@ void OscVoice::Init(float SR)
 	Panic();
 }
 
-void OscVoice::Panic() 
+void NoiseVoice::Panic() 
 {
 	NullVoice::Panic();
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		synth[i].SetAmp(0);
+		noise[i].SetAmp(0);
 		adsr[i].Process(false);	
 	}
 }
 
-void OscVoice::StartNote(uint8_t i, NoteOnEvent *p)
+void NoiseVoice::StartNote(uint8_t i, NoteOnEvent *p)
 {
 	//log("n: %d, m: %d", i, p->note);
 	notes[i].midiNote = p->note;
 	notes[i].amplitude = (float)p->velocity / 127.0f;
 			
-	synth[i].SetFreq(mtof(p->note));
-	synth[i].SetAmp(notes[i].amplitude);
+	noise[i].SetFreq(mtof(p->note));
+	noise[i].SetAmp(notes[i].amplitude);
 	adsr[i].Retrigger(false); // set attack mode
 	
 }
 
 
-void OscVoice::NoteOn(NoteOnEvent *p)
+void NoiseVoice::NoteOn(NoteOnEvent *p)
 {
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
@@ -115,7 +165,7 @@ void OscVoice::NoteOn(NoteOnEvent *p)
 }
 
 
-void OscVoice::NoteOff(NoteOffEvent *p)
+void NoiseVoice::NoteOff(NoteOffEvent *p)
 {
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
@@ -125,14 +175,14 @@ void OscVoice::NoteOff(NoteOffEvent *p)
 			
 			if (ADSROn == false)
 			{
-				synth[i].SetAmp(0.0);
+				noise[i].SetAmp(0.0);
 			}
 		}
 	}
 }
 
 
-float OscVoice::Process(void) 
+float NoiseVoice::Process(void) 
 {
 	float sig = 0.0;
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -148,35 +198,73 @@ float OscVoice::Process(void)
 		{
 			ADSRLevel = adsr[i].Process(attack);
 		}
-		sig += synth[i].Process() * ADSRLevel;
+		sig += noise[i].Process() * ADSRLevel;
 	}
 	
 	return sig / polyphony;
 }
+
+void NoiseVoice::SetCC0(uint8_t value)
+{
+	SetResonanceCC(value);
+}
 	
-void OscVoice::SetCC0(uint8_t value)
+void NoiseVoice::SetCC1(uint8_t value)
+{
+	SetDriveCC(value);
+}
+
+void NoiseVoice::SetCC2(uint8_t value)
 {
 	SetADSRAttackCC(value);
 }
 
-void OscVoice::SetCC1(uint8_t value)
-{
-	SetADSRDecayCC(value);
-}
-
-void OscVoice::SetCC2(uint8_t value)
-{
-	SetADSRSustainCC(value);
-}
-
-void OscVoice::SetCC3(uint8_t value)
+void NoiseVoice::SetCC3(uint8_t value)
 {
 	SetADSRReleaseCC(value);
 }
 
 
+//void NoiseVoice::SetCC2(uint8_t value)
+//{
+//	SetADSRSustainCC(value);
+//}
 
-void OscVoice::SetADSRAttackCC(uint8_t value)
+
+void NoiseVoice::SetResonanceCC(uint8_t value)
+{
+	float a = GetCCMinMax(value, 0.0, 1.0);
+	if (a == resonance)
+	{
+		return;
+	}
+	
+	resonance = a;
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		noise[i].SetResonance(resonance); 
+	}
+}
+
+
+void NoiseVoice::SetDriveCC(uint8_t value)
+{
+	float a = GetCCMinMax(value, 0.0, 1.0);
+	if (a == drive)
+	{
+		return;
+	}
+	
+	drive = a;
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		noise[i].SetDrive(drive); 
+	}
+}
+
+void NoiseVoice::SetADSRAttackCC(uint8_t value)
 {
 	float a = GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX);
 	if (a == ADSRAttack)
@@ -193,7 +281,7 @@ void OscVoice::SetADSRAttackCC(uint8_t value)
 }
 
 
-void OscVoice::SetADSRDecayCC(uint8_t value)
+void NoiseVoice::SetADSRDecayCC(uint8_t value)
 {
 	float d = GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX);
 	if (d == ADSRDecay)
@@ -210,7 +298,7 @@ void OscVoice::SetADSRDecayCC(uint8_t value)
 }
 
 
-void OscVoice::SetADSRSustainCC(uint8_t value)
+void NoiseVoice::SetADSRSustainCC(uint8_t value)
 {
 	if (value == 127)
 	{
@@ -236,7 +324,7 @@ void OscVoice::SetADSRSustainCC(uint8_t value)
 	}
 }
 
-void OscVoice::SetADSRReleaseCC(uint8_t value)
+void NoiseVoice::SetADSRReleaseCC(uint8_t value)
 {
 	float r = GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX);
 	if (r == ADSRRelease)

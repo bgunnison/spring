@@ -100,7 +100,7 @@ void HiHatVoice::NoteOff(NoteOffEvent *p)
 
 float HiHatVoice::Process(void) 
 {
-	float sig = 0;
+	float sig = 0.0;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		sig += hihat[i].Process() * notes[i].amplitude;

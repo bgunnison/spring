@@ -57,6 +57,7 @@ void Voices::Init(DaisyPod *pod, float SR)
 	springVoice.Init(sampleRate);
 	malletVoice.Init(sampleRate);
 	hihatVoice.Init(sampleRate);
+	noiseVoice.Init(sampleRate);
 	
 	pvoice = &oscVoice;
 }
@@ -96,6 +97,11 @@ void Voices::ChangeVoice(uint8_t sel)
 	case HIHAT_VOICE:
 		log("HiHat voice");
 		pvoice = &hihatVoice;
+		break;
+		
+	case NOISE_VOICE:
+		log("Noise voice");
+		pvoice = &noiseVoice;
 		break;
 		
 	default:
@@ -155,6 +161,10 @@ void Voices::UpdateBackGround(void)
 		
 	case HIHAT_VOICE:
 		phw->led1.Set(1.0, 1.0, 0.0);
+		break;
+		
+	case NOISE_VOICE:
+		phw->led1.Set(0.0, 1.0, 1.0);
 		break;
 	
 	default:
@@ -242,6 +252,9 @@ void Voices::CCProcess(uint8_t ccFuncNumber, uint8_t value)
 		ChangeVoice(HIHAT_VOICE);
 		break;
 
+	case 14:
+		ChangeVoice(NOISE_VOICE);
+		break;
 
 	default:
 		break;

@@ -100,7 +100,7 @@ void MalletVoice::NoteOff(NoteOffEvent *p)
 
 float MalletVoice::Process(void) 
 {
-	float sig = 0;
+	float sig = 0.0;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		sig += mallet[i].Process() * notes[i].amplitude;

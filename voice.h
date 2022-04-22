@@ -35,6 +35,7 @@ using namespace daisysp;
 #define MALLET_VOICE_POLYPHONY	2 // 98% with moog filter
 #define OSC_VOICE_POLYPHONY		8 // 18% cpu usage with moog filter
 #define HIHAT_VOICE_POLYPHONY   2
+#define NOISE_VOICE_POLYPHONY	8
 // we have to instantiate max
 #define MAX_POLYPHONY			OSC_VOICE_POLYPHONY
 
@@ -207,6 +208,94 @@ private:
 
 };
 
+// copied from DaisySP
+class MyWhiteNoise
+{
+public:
+	
+	/** Initializes the WhiteNoise object
+	*/
+	void Init(int32_t seed)
+	{
+		amp_      = 1.0f;
+		randseed_ = seed;
+	}
+
+	/** sets the amplitude of the noise output
+	*/
+	inline void SetAmp(float a) { amp_ = a; }
+	/** returns a new sample of noise in the range of -amp_ to amp_
+	*/
+	inline float Process()
+	{
+		randseed_ *= 16807;
+		return (randseed_ * coeff_) * amp_;
+	}
+
+private:
+	static constexpr float coeff_ = 4.6566129e-010f;
+	float                  amp_;
+	int32_t                randseed_;
+};
+
+// we get some tonality by setting the filter freq to the note
+// noise -> filter -> filter
+class NoiseFilter 
+{
+public:
+	void Init(float sampleRate, int32_t seed);
+	float Process();
+	void SetAmp(float amp) { wn.SetAmp(amp); }
+	void SetFreq(float freq);
+	void SetResonance(float Res);
+	void SetDrive(float drive);
+	
+private:
+	MyWhiteNoise wn;
+	static constexpr uint8_t NUM_FILTERS = 2;
+	Svf		filter[NUM_FILTERS];	
+};
+
+class NoiseVoice : public NullVoice
+{
+public:
+	void Init(float SR) override;
+	float Process() override;
+	
+	void NoteOn(NoteOnEvent *p) override;
+	void NoteOff(NoteOffEvent *p) override;
+	
+	void SetCC0(uint8_t value) override;
+	void SetCC1(uint8_t value) override;
+	void SetCC2(uint8_t value) override;
+	void SetCC3(uint8_t value) override;
+	
+	void Panic() override;
+	
+private:
+	NoiseFilter noise[MAX_POLYPHONY];
+	Adsr adsr[MAX_POLYPHONY]; 
+	
+	void StartNote(uint8_t i, NoteOnEvent *p);
+
+	bool ADSROn;
+	void SetADSRAttackCC(uint8_t value);
+	float ADSRAttack;
+	void SetADSRDecayCC(uint8_t value);
+	float ADSRDecay;
+	void SetADSRSustainCC(uint8_t value);
+	float ADSRSustain;
+	void SetADSRReleaseCC(uint8_t value);
+	float ADSRRelease;
+	
+	void SetResonanceCC(uint8_t value);
+	float resonance;
+	void SetDriveCC(uint8_t value);
+	float drive;
+
+	
+};
+
 
 
 // a container for voices
@@ -250,10 +339,11 @@ class Voices : public CCMIDIMapable
 		SYNTH_VOICE,
 		SPRING_VOICE,
 		MALLET_VOICE,
-		HIHAT_VOICE
+		HIHAT_VOICE,
+		NOISE_VOICE
 	}VOICE_TYPE;
 	
-	#define NUM_VOICES 4
+	#define NUM_VOICES 5
 	
 	void ChangeVoice(uint8_t sel);
 
@@ -262,6 +352,7 @@ class Voices : public CCMIDIMapable
 	SpringVoice springVoice;
 	MalletVoice malletVoice;
 	HiHatVoice  hihatVoice;
+	NoiseVoice  noiseVoice;
 	
 	NullVoice *pvoice;
 	

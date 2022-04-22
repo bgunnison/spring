@@ -100,7 +100,7 @@ void SpringVoice::NoteOff(NoteOffEvent *p)
 
 float SpringVoice::Process(void) 
 {
-	float sig = 0;
+	float sig = 0.0;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		sig += spring[i].Process() * notes[i].amplitude;

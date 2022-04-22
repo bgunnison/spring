@@ -79,6 +79,7 @@
     <ClCompile Include="hihatvoice.cpp" />
     <ClCompile Include="malletvoice.cpp" />
     <ClCompile Include="midimap.cpp" />
+    <ClCompile Include="noisevoice.cpp" />
     <ClCompile Include="oscvoice.cpp" />
     <ClCompile Include="spring.cpp" />
     <ClCompile Include="springvoice.cpp" />
