@@ -39,6 +39,20 @@ using namespace daisysp;
 // we have to instantiate max
 #define MAX_POLYPHONY			OSC_VOICE_POLYPHONY
 
+
+// ADSR settings
+#define ADSR_ATTACK_MIN			0.01f
+#define ADSR_ATTACK_DEFAULT		0.1f
+#define ADSR_ATTACK_MAX			5.0f
+#define ADSR_DECAY_MIN			0.01f
+#define ADSR_DECAY_DEFAULT		0.5f
+#define ADSR_DECAY_MAX			5.0f
+#define ADSR_RELEASE_MIN		0.01f
+#define ADSR_RELEASE_DEFAULT	0.2f
+#define ADSR_RELEASE_MAX		1.0f
+
+
+
 typedef struct
 {	
 	uint8_t midiNote; // > 0 if playing
@@ -251,9 +265,12 @@ public:
 	void SetDrive(float drive);
 	
 private:
+	float	sampleRate;
 	MyWhiteNoise wn;
-	static constexpr uint8_t NUM_FILTERS = 2;
-	Svf		filter[NUM_FILTERS];	
+	Svf		hpFilter;	// set cutoff an octave below note to prevent rumble
+	static constexpr uint8_t NUM_FILTERS = 3;
+	Svf		filter[NUM_FILTERS];
+	float	resGain; // as the resonance goes up the gain goes down
 };
 
 class NoiseVoice : public NullVoice

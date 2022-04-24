@@ -30,27 +30,48 @@ using namespace daisy;
 using namespace daisysp;
 
 
-void NoiseFilter::Init(float sampleRate, int32_t seed)
+void NoiseFilter::Init(float SR, int32_t seed)
 {
+	sampleRate = SR;
 	wn.Init(seed);
+	hpFilter.Init(sampleRate);
+	hpFilter.SetRes(0.5);
+	
 	for (uint8_t i = 0; i < NUM_FILTERS; i++)
 	{
 		filter[i].Init(sampleRate);
 	}
+	
+	SetResonance(0.8);
 }
 
 
 float NoiseFilter::Process()
 {
 	float w = wn.Process();
-	filter[0].Process(w);
-	filter[1].Process(filter[0].Band()); 
-	float o = filter[1].Band();
+	hpFilter.Process(w * resGain); // as the resonance goes up the gain must go down
+	
+	filter[0].Process(hpFilter.High());
+	float o1 = filter[0].Band();
+	filter[1].Process(o1); 
+	float o2 = filter[1].Band();
+	filter[2].Process(o2); 
+	float o = filter[2].Band();
+	if (isnan(o))
+	{
+		for (uint8_t i = 0; i < NUM_FILTERS; i++)
+		{
+			filter[i].Init(sampleRate);
+		}
+		return 0.0;
+	}
 	return o;
 }
 	
 void NoiseFilter::SetFreq(float freq)
 {
+	hpFilter.SetFreq(freq / 2); // an octave below to prevent rumble
+	
 	for (uint8_t i = 0; i < NUM_FILTERS; i++)
 	{
 		filter[i].SetFreq(freq);
@@ -59,9 +80,11 @@ void NoiseFilter::SetFreq(float freq)
 
 void NoiseFilter::SetResonance(float res)
 {
+	float r = fclamp(res, 0.3, 1.0);
+	resGain = 3.0 / r;
 	for (uint8_t i = 0; i < NUM_FILTERS; i++)
 	{
-		filter[i].SetRes(res);
+		filter[i].SetRes(r);
 	}
 }
 
@@ -75,20 +98,6 @@ void NoiseFilter::SetDrive(float drive)
 
 
 
-// ADSR settings
-#define ADSR_ATTACK_MIN			0.01f
-#define ADSR_ATTACK_DEFAULT		0.1f
-#define ADSR_ATTACK_MAX			5.0f
-#define ADSR_DECAY_MIN			0.01f
-#define ADSR_DECAY_DEFAULT		0.5f
-#define ADSR_DECAY_MAX			5.0f
-#define ADSR_SUSTAIN_MIN		0.01f
-#define ADSR_SUSTAIN_DEFAULT	2.0f
-#define ADSR_SUSTAIN_MAX		20.0f
-#define ADSR_RELEASE_MIN		0.01f
-#define ADSR_RELEASE_DEFAULT	0.2f
-#define ADSR_RELEASE_MAX		20.0f
-
 void NoiseVoice::Init(float SR) 
 {
 	NullVoice::Init(SR);
@@ -96,7 +105,7 @@ void NoiseVoice::Init(float SR)
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
 	ADSRDecay = ADSR_DECAY_DEFAULT;
-	ADSRSustain = ADSR_SUSTAIN_DEFAULT;
+	ADSRSustain = 1.0;
 	ADSRRelease = ADSR_RELEASE_DEFAULT;
 	
 	resonance = 0.8;
@@ -111,10 +120,10 @@ void NoiseVoice::Init(float SR)
 		noise[i].SetResonance(resonance);
 		
 		adsr[i].Init(sampleRate);
-		adsr[i].SetTime(ADSR_SEG_ATTACK, ADSRAttack);
-		adsr[i].SetTime(ADSR_SEG_DECAY, ADSRDecay);
+		adsr[i].SetAttackTime(ADSRAttack);
+		adsr[i].SetDecayTime(ADSRDecay);
 		adsr[i].SetSustainLevel(ADSRSustain);
-		adsr[i].SetTime(ADSR_SEG_RELEASE, ADSRRelease);
+		adsr[i].SetReleaseTime(ADSRRelease);
 	}	
 	
 	Panic();
@@ -276,7 +285,7 @@ void NoiseVoice::SetADSRAttackCC(uint8_t value)
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_ATTACK, ADSRAttack); 
+		adsr[i].SetAttackTime(ADSRAttack); 
 	}
 }
 
@@ -293,7 +302,7 @@ void NoiseVoice::SetADSRDecayCC(uint8_t value)
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_DECAY, ADSRDecay); 
+		adsr[i].SetDecayTime(ADSRDecay); 
 	}
 }
 
@@ -310,7 +319,8 @@ void NoiseVoice::SetADSRSustainCC(uint8_t value)
 		ADSROn = true;
 	}
 	
-	float s = GetCCMinMax(value, ADSR_SUSTAIN_MIN, ADSR_SUSTAIN_MAX);
+	float s = value / 127.0;
+	
 	if (s == ADSRSustain)
 	{
 		return;
@@ -320,7 +330,7 @@ void NoiseVoice::SetADSRSustainCC(uint8_t value)
 
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_IDLE, ADSRSustain); 
+		adsr[i].SetSustainLevel(ADSRSustain); 
 	}
 }
 
@@ -336,7 +346,7 @@ void NoiseVoice::SetADSRReleaseCC(uint8_t value)
 
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_RELEASE, ADSRRelease); 
+		adsr[i].SetReleaseTime(ADSRRelease); 
 	}
 }
 

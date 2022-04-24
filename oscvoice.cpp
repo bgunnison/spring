@@ -30,20 +30,6 @@ using namespace daisy;
 using namespace daisysp;
 
 
-// ADSR for synth voice ranges
-#define ADSR_ATTACK_MIN			0.01f
-#define ADSR_ATTACK_DEFAULT		0.1f
-#define ADSR_ATTACK_MAX			5.0f
-#define ADSR_DECAY_MIN			0.01f
-#define ADSR_DECAY_DEFAULT		0.5f
-#define ADSR_DECAY_MAX			5.0f
-#define ADSR_SUSTAIN_MIN		0.01f
-#define ADSR_SUSTAIN_DEFAULT	2.0f
-#define ADSR_SUSTAIN_MAX		20.0f
-#define ADSR_RELEASE_MIN		0.01f
-#define ADSR_RELEASE_DEFAULT	0.2f
-#define ADSR_RELEASE_MAX		20.0f
-
 void OscVoice::Init(float SR) 
 {
 	NullVoice::Init(SR);
@@ -51,7 +37,7 @@ void OscVoice::Init(float SR)
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
 	ADSRDecay = ADSR_DECAY_DEFAULT;
-	ADSRSustain = ADSR_SUSTAIN_DEFAULT;
+	ADSRSustain = 1.0;
 	ADSRRelease = ADSR_RELEASE_DEFAULT;
 	
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -61,10 +47,10 @@ void OscVoice::Init(float SR)
 		synth[i].SetAmp(0);
 		
 		adsr[i].Init(sampleRate);
-		adsr[i].SetTime(ADSR_SEG_ATTACK, ADSRAttack);
-		adsr[i].SetTime(ADSR_SEG_DECAY, ADSRDecay);
+		adsr[i].SetAttackTime(ADSRAttack);
+		adsr[i].SetDecayTime(ADSRDecay);
 		adsr[i].SetSustainLevel(ADSRSustain);
-		adsr[i].SetTime(ADSR_SEG_RELEASE, ADSRRelease);
+		adsr[i].SetReleaseTime(ADSRRelease);
 	}	
 	
 	Panic();
@@ -184,11 +170,11 @@ void OscVoice::SetADSRAttackCC(uint8_t value)
 		return;
 	}
 	ADSRAttack = a;
-	//log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
+	log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_ATTACK, ADSRAttack); 
+		adsr[i].SetAttackTime(ADSRAttack); 
 	}
 }
 
@@ -201,11 +187,11 @@ void OscVoice::SetADSRDecayCC(uint8_t value)
 		return;
 	}
 	ADSRDecay = d;
-	//log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
+	log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_DECAY, ADSRDecay); 
+		adsr[i].SetDecayTime(ADSRDecay); 
 	}
 }
 
@@ -222,17 +208,18 @@ void OscVoice::SetADSRSustainCC(uint8_t value)
 		ADSROn = true;
 	}
 	
-	float s = GetCCMinMax(value, ADSR_SUSTAIN_MIN, ADSR_SUSTAIN_MAX);
+	float s = value / 127.0;
+	
 	if (s == ADSRSustain)
 	{
 		return;
 	}
 	ADSRSustain = s;
-	//log("Sustain: %d", (uint32_t)(ADSRSustain * 1000));
+	log("Sustain: %d", (uint32_t)(ADSRSustain * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_IDLE, ADSRSustain); 
+		adsr[i].SetSustainLevel(ADSRSustain); 
 	}
 }
 
@@ -244,11 +231,11 @@ void OscVoice::SetADSRReleaseCC(uint8_t value)
 		return;
 	}
 	ADSRRelease = r;
-	//log("Release: %d", (uint32_t)(ADSRRelease * 1000));
+	log("Release: %d", (uint32_t)(ADSRRelease * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		adsr[i].SetTime(ADSR_SEG_RELEASE, ADSRRelease); 
+		adsr[i].SetReleaseTime(ADSRRelease); 
 	}
 }
 
