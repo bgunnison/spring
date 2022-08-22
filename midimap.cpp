@@ -24,14 +24,20 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include "midimap.h"
 
-
+MIDINoteMap AMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, A_ROOT_NOTE);
+MIDINoteMap BMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, B_ROOT_NOTE);
+MIDINoteMap CMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, C_ROOT_NOTE);
 MIDINoteMap DMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, D_ROOT_NOTE);
 
-void SetFCB1010MIDIMap(CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt)
+void SetFCB1010MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt)
 {
 	
 	// via the FCB-UNO Control Center
 	// page 00, maps notes to pentatonic major scale
+	noteMap->Add(22, &AMajorPentNoteMap); 
+	noteMap->Add(21, &BMajorPentNoteMap); 
+	noteMap->Add(20, &CMajorPentNoteMap); 
+	noteMap->Add(19, &DMajorPentNoteMap); 
 	// CC50 - CC56 : A - G major pentatonic
 	// page 01, maps notes to pentatonic major scale
 	// CC60 - CC66 :  A - G minor pentatonic
@@ -67,4 +73,6 @@ void SetAlesisV125MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapabl
 	ccmap->Add(1, 23, voice); 
 	ccmap->Add(2, 24, voice); 
 	ccmap->Add(3, 25, voice); 
+	ccmap->Add(4, 26, voice); 
+	ccmap->Add(5, 27, voice); 
 }

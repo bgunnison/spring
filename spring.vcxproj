@@ -57,6 +57,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="notemapalgorithms.py" />
     <None Include="serial_monitor.py" />
     <None Include="spring-Debug.vgdbsettings" />
     <None Include="spring-Release.vgdbsettings" />
@@ -76,6 +77,7 @@
   <ItemGroup>
     <ClCompile Include="..\daisyexamples\libDaisy\core\startup_stm32h750xx.c" />
     <ClCompile Include="filter.cpp" />
+    <ClCompile Include="formantvoice.cpp" />
     <ClCompile Include="hihatvoice.cpp" />
     <ClCompile Include="malletvoice.cpp" />
     <ClCompile Include="midimap.cpp" />

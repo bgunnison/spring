@@ -56,7 +56,7 @@ void Voices::Init(DaisyPod *pod, float SR)
 	oscVoice.Init(sampleRate);
 	springVoice.Init(sampleRate);
 	malletVoice.Init(sampleRate);
-	hihatVoice.Init(sampleRate);
+	formantVoice.Init(sampleRate);
 	noiseVoice.Init(sampleRate);
 	
 	pvoice = &oscVoice;
@@ -94,9 +94,9 @@ void Voices::ChangeVoice(uint8_t sel)
 		pvoice = &malletVoice;
 		break;
 		
-	case HIHAT_VOICE:
-		log("HiHat voice");
-		pvoice = &hihatVoice;
+	case FORMANT_VOICE:
+		log("Formant voice");
+		pvoice = &formantVoice;
 		break;
 		
 	case NOISE_VOICE:
@@ -159,7 +159,7 @@ void Voices::UpdateBackGround(void)
 		phw->led1.Set(1.0, 0.0, 0.0);
 		break;
 		
-	case HIHAT_VOICE:
+	case FORMANT_VOICE:
 		phw->led1.Set(1.0, 1.0, 0.0);
 		break;
 		
@@ -235,6 +235,12 @@ void Voices::CCProcess(uint8_t ccFuncNumber, uint8_t value)
 	case 3:
 		pvoice->SetCC3(value);
 		break;
+	case 4:
+		pvoice->SetCC4(value);
+		break;
+	case 5:
+		pvoice->SetCC5(value);
+		break;
 		
 	case 10:
 		ChangeVoice(SYNTH_VOICE);
@@ -249,7 +255,7 @@ void Voices::CCProcess(uint8_t ccFuncNumber, uint8_t value)
 		break;
 		
 	case 13:
-		ChangeVoice(HIHAT_VOICE);
+		ChangeVoice(FORMANT_VOICE);
 		break;
 
 	case 14:

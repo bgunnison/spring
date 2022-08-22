@@ -30,94 +30,21 @@ using namespace daisy;
 using namespace daisysp;
 
 
-void NoiseFilter::Init(float SR, int32_t seed)
-{
-	sampleRate = SR;
-	wn.Init(seed);
-	hpFilter.Init(sampleRate);
-	hpFilter.SetRes(0.5);
-	
-	for (uint8_t i = 0; i < NUM_FILTERS; i++)
-	{
-		filter[i].Init(sampleRate);
-	}
-	
-	SetResonance(0.8);
-}
-
-
-float NoiseFilter::Process(float adsrLevel)
-{
-	float w = wn.Process();
-	hpFilter.Process(w * resGain); // as the resonance goes up the gain must go down
-	float f = hpFilter.High() * adsrLevel; // adsr level as we apply it to the noise before the filter to excite the filter. 
-	filter[0].Process(f);
-	float o1 = filter[0].Band();
-	filter[1].Process(o1); 
-	float o2 = filter[1].Band();
-	filter[2].Process(o2); 
-	float o = filter[2].Band();
-	if (isnan(o))
-	{
-		for (uint8_t i = 0; i < NUM_FILTERS; i++)
-		{
-			filter[i].Init(sampleRate);
-		}
-		return 0.0;
-	}
-	return o;
-}
-	
-void NoiseFilter::SetFreq(float freq)
-{
-	hpFilter.SetFreq(freq / 2); // an octave below to prevent rumble
-	
-	for (uint8_t i = 0; i < NUM_FILTERS; i++)
-	{
-		filter[i].SetFreq(freq);
-	}
-}
-
-void NoiseFilter::SetResonance(float res)
-{
-	float r = fclamp(res, 0.3, 1.0);
-	resGain = 3.0 / r;
-	for (uint8_t i = 0; i < NUM_FILTERS; i++)
-	{
-		filter[i].SetRes(r);
-	}
-}
-
-void NoiseFilter::SetDrive(float drive)
-{
-	for (uint8_t i = 0; i < NUM_FILTERS; i++)
-	{
-		filter[i].SetDrive(drive);
-	}
-}
-
-
-
-void NoiseVoice::Init(float SR) 
+void FormantVoice::Init(float SR) 
 {
 	NullVoice::Init(SR);
-	polyphony = NOISE_VOICE_POLYPHONY;
+	polyphony = FORMANT_VOICE_POLYPHONY;
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
 	ADSRDecay = ADSR_DECAY_DEFAULT;
 	ADSRSustain = 1.0;
 	ADSRRelease = ADSR_RELEASE_DEFAULT;
 	
-	resonance = 0.8;
-	drive = 0.5;
-	
-	int32_t seed = 7;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		noise[i].Init(SR, seed + (i * seed)); // i is seed
-		noise[i].SetAmp(0);
-		noise[i].SetDrive(drive);
-		noise[i].SetResonance(resonance);
+		formant[i].Init(sampleRate);
+		formant[i].SetFormantFreq(1000);
+		formant[i].SetPhaseShift(0);
 		
 		adsr[i].Init(sampleRate);
 		adsr[i].SetAttackTime(ADSRAttack);
@@ -129,31 +56,29 @@ void NoiseVoice::Init(float SR)
 	Panic();
 }
 
-void NoiseVoice::Panic() 
+void FormantVoice::Panic() 
 {
 	NullVoice::Panic();
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		noise[i].SetAmp(0);
 		adsr[i].Process(false);	
 	}
 }
 
-void NoiseVoice::StartNote(uint8_t i, NoteOnEvent *p)
+void FormantVoice::StartNote(uint8_t i, NoteOnEvent *p)
 {
 	//log("n: %d, m: %d", i, p->note);
 	notes[i].midiNote = p->note;
 	notes[i].amplitude = (float)p->velocity / 127.0f;
 			
-	noise[i].SetFreq(mtof(p->note));
-	noise[i].SetAmp(notes[i].amplitude);
+	formant[i].SetCarrierFreq(mtof(p->note));
 	adsr[i].Retrigger(false); // set attack mode
 	
 }
 
 
-void NoiseVoice::NoteOn(NoteOnEvent *p)
+void FormantVoice::NoteOn(NoteOnEvent *p)
 {
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
@@ -174,24 +99,19 @@ void NoiseVoice::NoteOn(NoteOnEvent *p)
 }
 
 
-void NoiseVoice::NoteOff(NoteOffEvent *p)
+void FormantVoice::NoteOff(NoteOffEvent *p)
 {
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		if (notes[i].midiNote == p->note)
 		{
 			notes[i].midiNote = 0;	
-			
-			if (ADSROn == false)
-			{
-				noise[i].SetAmp(0.0);
-			}
 		}
 	}
 }
 
 
-float NoiseVoice::Process(void) 
+float FormantVoice::Process(void) 
 {
 	float sig = 0.0;
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -207,73 +127,79 @@ float NoiseVoice::Process(void)
 		{
 			ADSRLevel = adsr[i].Process(attack);
 		}
-		sig += noise[i].Process(ADSRLevel); // pass adsr level as we apply it to the noise before the filter to excite the filter. 
+		sig += formant[i].Process() * ADSRLevel * notes[i].amplitude;
 	}
 	
 	return sig / polyphony;
 }
-
-void NoiseVoice::SetCC0(uint8_t value)
-{
-	SetResonanceCC(value);
-}
 	
-void NoiseVoice::SetCC1(uint8_t value)
-{
-	SetDriveCC(value);
-}
-
-void NoiseVoice::SetCC2(uint8_t value)
+void FormantVoice::SetCC0(uint8_t value)
 {
 	SetADSRAttackCC(value);
 }
 
-void NoiseVoice::SetCC3(uint8_t value)
+void FormantVoice::SetCC1(uint8_t value)
+{
+	SetADSRDecayCC(value);
+}
+
+void FormantVoice::SetCC2(uint8_t value)
+{
+	SetADSRSustainCC(value);
+}
+
+void FormantVoice::SetCC3(uint8_t value)
 {
 	SetADSRReleaseCC(value);
 }
 
-
-//void NoiseVoice::SetCC2(uint8_t value)
-//{
-//	SetADSRSustainCC(value);
-//}
-
-
-void NoiseVoice::SetResonanceCC(uint8_t value)
+void FormantVoice::SetCC4(uint8_t value)
 {
-	float a = GetCCMinMax(value, 0.0, 1.0);
-	if (a == resonance)
+	SetFormantFreqCC(value);
+}
+
+void FormantVoice::SetCC5(uint8_t value)
+{
+	SetPhaseShiftCC(value);
+}
+
+#define CARRIER_FREQ_MIN 1000.0
+#define CARRIER_FREQ_MAX 20000.0
+
+void FormantVoice::SetFormantFreqCC(uint8_t value)
+{
+	float f = GetCCMinMax(value, CARRIER_FREQ_MIN, CARRIER_FREQ_MAX);
+	if (f == formantFreq)
 	{
 		return;
 	}
-	
-	resonance = a;
-	
+	formantFreq = f;
+	//log("Formant Freq: %u ", (uint32_t)(formantFreq * 1000));
+
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		noise[i].SetResonance(resonance); 
+		formant[i].SetCarrierFreq(formantFreq); 
 	}
 }
 
 
-void NoiseVoice::SetDriveCC(uint8_t value)
+void FormantVoice::SetPhaseShiftCC(uint8_t value)
 {
-	float a = GetCCMinMax(value, 0.0, 1.0);
-	if (a == drive)
+	float p = float(value)/127.0;
+	if (p == phaseShift)
 	{
 		return;
 	}
-	
-	drive = a;
+	phaseShift = p;
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
-		noise[i].SetDrive(drive); 
+		formant[i].SetPhaseShift(phaseShift); 
 	}
 }
 
-void NoiseVoice::SetADSRAttackCC(uint8_t value)
+
+void FormantVoice::SetADSRAttackCC(uint8_t value)
 {
 	float a = GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX);
 	if (a == ADSRAttack)
@@ -290,7 +216,7 @@ void NoiseVoice::SetADSRAttackCC(uint8_t value)
 }
 
 
-void NoiseVoice::SetADSRDecayCC(uint8_t value)
+void FormantVoice::SetADSRDecayCC(uint8_t value)
 {
 	float d = GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX);
 	if (d == ADSRDecay)
@@ -307,7 +233,7 @@ void NoiseVoice::SetADSRDecayCC(uint8_t value)
 }
 
 
-void NoiseVoice::SetADSRSustainCC(uint8_t value)
+void FormantVoice::SetADSRSustainCC(uint8_t value)
 {
 	if (value == 127)
 	{
@@ -334,7 +260,7 @@ void NoiseVoice::SetADSRSustainCC(uint8_t value)
 	}
 }
 
-void NoiseVoice::SetADSRReleaseCC(uint8_t value)
+void FormantVoice::SetADSRReleaseCC(uint8_t value)
 {
 	float r = GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX);
 	if (r == ADSRRelease)

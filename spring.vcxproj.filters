@@ -26,6 +26,9 @@
     <None Include="serial_monitor.py">
       <Filter>Source files</Filter>
     </None>
+    <None Include="notemapalgorithms.py">
+      <Filter>Source files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="stm32.xml">
@@ -64,6 +67,9 @@
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="noisevoice.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="formantvoice.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>

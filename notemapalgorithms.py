@@ -25,17 +25,18 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Note maps algorithms
 """
 
-midi_notes = ['C',	'C#',	'D',	'D#',	'E',	'F',	'F#',	'G',	'G#',	'A',	'A#',	'B']
+chromatic = ['C',	'C#',	'D',	'D#',	'E',	'F',	'F#',	'G',	'G#',	'A',	'A#',	'B']
 def run_maps():
     print('Major pentatonic')
-    map = [0,2,5,6,9]
+    map = [0,2,4,7,9]
     l = len(map)
     root = 2
     for mn in range(127):
         base = int(mn/len(map))
         i = mn - (base * l) 
         o = map[i] + root + (base * 12)
-        print(f'mn: {mn}, b: {base}, i: {i}, on: {o}, note: {n}')
+        n = chromatic[o % 12]
+        print(f'NoteIn: {mn}, b: {base}, i: {i}, NoteOut: {o}, {n}')
 
 
 

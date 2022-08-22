@@ -35,6 +35,7 @@ using namespace daisysp;
 #define MALLET_VOICE_POLYPHONY	2 // 98% with moog filter
 #define OSC_VOICE_POLYPHONY		8 // 18% cpu usage with moog filter
 #define HIHAT_VOICE_POLYPHONY   2
+#define FORMANT_VOICE_POLYPHONY 8
 #define NOISE_VOICE_POLYPHONY	8
 // we have to instantiate max
 #define MAX_POLYPHONY			OSC_VOICE_POLYPHONY
@@ -72,7 +73,10 @@ public:
 	virtual void SetCC0(uint8_t value);
 	virtual void SetCC1(uint8_t value);
 	virtual void SetCC2(uint8_t value);
-	virtual void SetCC3(uint8_t value);
+	virtual void SetCC3(uint8_t value){}
+	virtual void SetCC4(uint8_t value){}
+	virtual void SetCC5(uint8_t value){}
+	
 	
 	virtual void Panic();
 	
@@ -222,6 +226,49 @@ private:
 
 };
 
+
+class FormantVoice : public NullVoice
+{
+public:
+	void Init(float SR) override;
+	float Process() override;
+	
+	virtual void NoteOn(NoteOnEvent *p) override;
+	virtual void NoteOff(NoteOffEvent *p) override;
+	
+	void SetCC0(uint8_t value) override;
+	void SetCC1(uint8_t value) override;
+	void SetCC2(uint8_t value) override;
+	void SetCC3(uint8_t value) override;
+	void SetCC4(uint8_t value) override;
+	void SetCC5(uint8_t value) override;
+	
+	void Panic() override;
+	
+private:
+	FormantOscillator formant[MAX_POLYPHONY];
+	Adsr adsr[MAX_POLYPHONY]; 
+
+	void StartNote(uint8_t i, NoteOnEvent *p);
+	
+	bool ADSROn;
+	void SetADSRAttackCC(uint8_t value);
+	float ADSRAttack;
+	void SetADSRDecayCC(uint8_t value);
+	float ADSRDecay;
+	void SetADSRSustainCC(uint8_t value);
+	float ADSRSustain;
+	void SetADSRReleaseCC(uint8_t value);
+	float ADSRRelease;
+
+	void SetFormantFreqCC(uint8_t value);
+	float formantFreq; 
+	void SetPhaseShiftCC(uint8_t value); 
+	float phaseShift; 
+
+};
+
+
 // copied from DaisySP
 class MyWhiteNoise
 {
@@ -258,7 +305,7 @@ class NoiseFilter
 {
 public:
 	void Init(float sampleRate, int32_t seed);
-	float Process();
+	float Process(float adsrLevel);
 	void SetAmp(float amp) { wn.SetAmp(amp); }
 	void SetFreq(float freq);
 	void SetResonance(float Res);
@@ -356,7 +403,7 @@ class Voices : public CCMIDIMapable
 		SYNTH_VOICE,
 		SPRING_VOICE,
 		MALLET_VOICE,
-		HIHAT_VOICE,
+		FORMANT_VOICE,
 		NOISE_VOICE
 	}VOICE_TYPE;
 	
@@ -368,7 +415,7 @@ class Voices : public CCMIDIMapable
 	OscVoice	oscVoice;
 	SpringVoice springVoice;
 	MalletVoice malletVoice;
-	HiHatVoice  hihatVoice;
+	FormantVoice  formantVoice;
 	NoiseVoice  noiseVoice;
 	
 	NullVoice *pvoice;

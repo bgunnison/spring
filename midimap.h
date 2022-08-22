@@ -134,29 +134,34 @@ public:
 		NOTE_MAP_MAJOR_PENTATONIC
 	}NOTE_MAP_TYPE;
 	
-	MIDINoteMap(NOTE_MAP_TYPE nmt, MIDI_ROOT_NOTE rootNote) { type = nmt; root = rootNote; }
+	MIDINoteMap(NOTE_MAP_TYPE nmt, MIDI_ROOT_NOTE rootNote) { map_type = nmt; root = rootNote; }
 	
 	// TODO switch in note map types...
 	
 	uint8_t Process(uint8_t noteIn)
 	{
-		if (type == NOTE_MAP_NONE)
+		switch (map_type)
 		{
+		default:
+		case NOTE_MAP_NONE:
 			return noteIn;
-		}
-		
-		uint8_t oct = noteIn / 12; //truncation towards zero
-		uint8_t n = noteIn - (oct * 12);
+			
+		case NOTE_MAP_MAJOR_PENTATONIC:
+			{
+				uint8_t base = noteIn / sizeof(MajorPentNoteMap); //truncation towards zero
+				uint8_t i = noteIn - (base * sizeof(MajorPentNoteMap));
 	
-		uint8_t noteOut = root + (oct * 12) + MajorPentNoteMap[n];
-		log("noteIn: %d, NoteOut: %d", noteIn, noteOut);
-		return noteOut;
+				uint8_t noteOut = root + (base * 12) + MajorPentNoteMap[i];
+				log("noteIn: %d, NoteOut: %d", noteIn, noteOut);
+				return noteOut;
+			}
+		}
 	}
 
 private:
-	NOTE_MAP_TYPE type;
+	NOTE_MAP_TYPE map_type;
 	uint8_t root;
-	uint8_t MajorPentNoteMap[5] = { 0, 2, 5, 6, 9 }; 
+	uint8_t MajorPentNoteMap[5] = { 0, 2, 4, 7, 9 }; 
 };
 
 
@@ -201,4 +206,6 @@ private:
 };
 
 void SetAlesisV125MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt);
+void SetFCB1010MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt);
+
 
