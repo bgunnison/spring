@@ -1,3 +1,5 @@
+
+
 /*
  This file is part of Virtual Robot's Pine Synthesizer. 
 
@@ -21,33 +23,42 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #pragma once
-#include "daisy_pod.h"
+
 #include <stdint.h>
-
-using namespace daisy;
-
-
-void log(const char* format, ...);
-void RotateLED(uint8_t led);
-void LEDOff(uint8_t led);
+#include "utilities.h"
 
 
 
-typedef enum
+// control map - maps the pod knobs to voice or filter parms based on selector knob
+class ControlMap
 {
-	LED_OFF,
-	RED_ON,
-	GREEN_ON,
-	BLUE_ON
-}LED_COLOR_ON;
+public:
+	
+	void Init(DaisyPod *hw, Voices *voice, Filters *filt, float *gl, float *gr);
+	
+	void Control();
+	
+	
+private:
+	
+	DaisyPod *hw;
+	Voices *voices;
+	Filters *filters;
+	float *gainL;
+	float *gainR;
+	Parameter gainLeftPot;
+	Parameter gainRightPot;
+	
+	uint8_t button1;
+	uint8_t button2;
+	
+	bool knobsChanged;
+	float knob1LastValue;
+	float knob2LastValue;
 
-void SetLEDs(LED_COLOR_ON led1, LED_COLOR_ON led2, bool blinked=false);
-void BlinkLEDs(uint16_t msec, LED_COLOR_ON led1, LED_COLOR_ON led2);
-void ResetLEDs();
 
+		
 
-float GetCCMinMax(uint8_t CCValue, float min, float max);
-void ComInit(DaisyPod *hw);
-
-
-
+	
+	
+};

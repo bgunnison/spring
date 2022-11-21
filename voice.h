@@ -48,6 +48,9 @@ using namespace daisysp;
 #define ADSR_DECAY_MIN			0.01f
 #define ADSR_DECAY_DEFAULT		0.5f
 #define ADSR_DECAY_MAX			5.0f
+#define ADSR_SUSTAIN_MIN		0.01f
+#define ADSR_SUSTAIN_DEFAULT	0.0f
+#define ADSR_SUSTAIN_MAX		1.0f
 #define ADSR_RELEASE_MIN		0.01f
 #define ADSR_RELEASE_DEFAULT	0.2f
 #define ADSR_RELEASE_MAX		1.0f
@@ -64,19 +67,26 @@ typedef struct
 class NullVoice
 {
 public:
-	virtual void Init(float SR);
+	virtual void Init(DaisyPod *phw, float SR);
 	virtual float Process();
 	
 	virtual void NoteOn(NoteOnEvent *p);
 	virtual void NoteOff(NoteOffEvent *p);
+	virtual void SetFreq(float freq);
 
 	virtual void SetCC0(uint8_t value);
 	virtual void SetCC1(uint8_t value);
 	virtual void SetCC2(uint8_t value);
-	virtual void SetCC3(uint8_t value){}
+	virtual void SetCC3(uint8_t value);
 	virtual void SetCC4(uint8_t value){}
 	virtual void SetCC5(uint8_t value){}
 	
+	virtual void ProcessParm0();
+	virtual void ProcessParm1();
+	virtual void ProcessParm2();
+	virtual void ProcessParm3();
+	virtual void ProcessParm4(){}
+	virtual void ProcessParm5(){}
 	
 	virtual void Panic();
 	
@@ -85,23 +95,30 @@ protected:
 	float sampleRate;
 	uint8_t polyphony;
 	Note notes[MAX_POLYPHONY];
+	DaisyPod *hw;
 };
 
 
 class OscVoice : public NullVoice
 {
 public:
-	void Init(float SR) override;
+	void Init(DaisyPod *phw, float SR) override;
 	float Process() override;
 	
 	void NoteOn(NoteOnEvent *p) override;
 	void NoteOff(NoteOffEvent *p) override;
+	void SetFreq(float freq) override;
 	
 	void SetCC0(uint8_t value) override;
 	void SetCC1(uint8_t value) override;
 	void SetCC2(uint8_t value) override;
 	void SetCC3(uint8_t value) override;
 	
+	void ProcessParm0() override;
+	void ProcessParm1() override;
+	void ProcessParm2() override;
+	void ProcessParm3() override;
+
 	void Panic() override;
 	
 private:
@@ -111,14 +128,20 @@ private:
 	void StartNote(uint8_t i, NoteOnEvent *p);
 
 	bool ADSROn;
-	void SetADSRAttackCC(uint8_t value);
+	
+	void SetADSRAttack(float v);
 	float ADSRAttack;
-	void SetADSRDecayCC(uint8_t value);
+	void SetADSRDecay(float v);
 	float ADSRDecay;
-	void SetADSRSustainCC(uint8_t value);
+	void SetADSRSustain(float v);
 	float ADSRSustain;
-	void SetADSRReleaseCC(uint8_t value);
+	void SetADSRRelease(float v);
 	float ADSRRelease;
+	
+	Parameter ADSRAttackPotParm; // sets range and plot 
+	Parameter ADSRDecayPotParm; // sets range and plot 
+	Parameter ADSRSustainPotParm; // sets range and plot 
+	Parameter ADSRReleasePotParm; // sets range and plot 
 	
 };
 
@@ -126,16 +149,22 @@ private:
 class SpringVoice : public NullVoice
 {
 public:
-	void Init(float SR) override;
+	void Init(DaisyPod *phw, float SR) override;
 	float Process() override;
 	
-	virtual void NoteOn(NoteOnEvent *p) override;
-	virtual void NoteOff(NoteOffEvent *p) override;
-	
+	void NoteOn(NoteOnEvent *p) override;
+	void NoteOff(NoteOffEvent *p) override;
+	void SetFreq(float freq) override;
+
 	void SetCC0(uint8_t value) override;
 	void SetCC1(uint8_t value) override;
 	void SetCC2(uint8_t value) override;
 	void SetCC3(uint8_t value) override;
+	
+	void ProcessParm0() override;
+	void ProcessParm1() override;
+	void ProcessParm2() override;
+	void ProcessParm3() override;
 	
 	void Panic() override;
 	
@@ -145,14 +174,20 @@ private:
 	
 	void StartNote(uint8_t i, NoteOnEvent *p);
 	
-	void SetAccentCC(uint8_t value);
-	float accent; 
-	void SetDampingCC(uint8_t value);
+	void SetDamping(float v);
 	float damping; 
-	void SetStructureCC(uint8_t value);
+	void SetStructure(float v);
 	float structure;
-	void SetBrightnessCC(uint8_t value);
+	void SetBrightness(float v);
 	float brightness;
+	void SetAccent(float v);
+	float accent; 
+
+	
+	Parameter DampingPotParm; // sets range and plot 
+	Parameter StructurePotParm; // sets range and plot 
+	Parameter BrightnessPotParm; // sets range and plot 
+	Parameter AccentPotParm; // sets range and plot 
 
 };
 
@@ -160,16 +195,22 @@ private:
 class MalletVoice : public NullVoice
 {
 public:
-	void Init(float SR) override;
+	void Init(DaisyPod *phw, float SR) override;
 	float Process() override;
 	
 	virtual void NoteOn(NoteOnEvent *p) override;
 	virtual void NoteOff(NoteOffEvent *p) override;
-	
+	virtual void SetFreq(float freq) override;
+
 	void SetCC0(uint8_t value) override;
 	void SetCC1(uint8_t value) override;
 	void SetCC2(uint8_t value) override;
 	void SetCC3(uint8_t value) override;
+	
+	void ProcessParm0() override;
+	void ProcessParm1() override;
+	void ProcessParm2() override;
+	void ProcessParm3() override;
 	
 	void Panic() override;
 	
@@ -179,14 +220,20 @@ private:
 	
 	void StartNote(uint8_t i, NoteOnEvent *p);
 	
-	void SetAccentCC(uint8_t value);
-	float accent; 
-	void SetDampingCC(uint8_t value);
+	void SetDamping(float v);
 	float damping; 
-	void SetStructureCC(uint8_t value);
+	void SetStructure(float v);
 	float structure;
-	void SetBrightnessCC(uint8_t value);
+	void SetBrightness(float v);
 	float brightness;
+	void SetAccent(float v);
+	float accent; 
+	
+	Parameter DampingPotParm; // sets range and plot 
+	Parameter StructurePotParm; // sets range and plot 
+	Parameter BrightnessPotParm; // sets range and plot 
+	Parameter AccentPotParm; // sets range and plot 
+
 
 };
 
@@ -194,16 +241,22 @@ private:
 class HiHatVoice : public NullVoice
 {
 public:
-	void Init(float SR) override;
+	void Init(DaisyPod *phw, float SR) override;
 	float Process() override;
 	
 	virtual void NoteOn(NoteOnEvent *p) override;
 	virtual void NoteOff(NoteOffEvent *p) override;
-	
+	virtual void SetFreq(float freq) override;
+
 	void SetCC0(uint8_t value) override;
 	void SetCC1(uint8_t value) override;
 	void SetCC2(uint8_t value) override;
 	void SetCC3(uint8_t value) override;
+	
+	void ProcessParm0() override;
+	void ProcessParm1() override;
+	void ProcessParm2() override;
+	void ProcessParm3() override;
 	
 	void Panic() override;
 	
@@ -230,18 +283,24 @@ private:
 class FormantVoice : public NullVoice
 {
 public:
-	void Init(float SR) override;
+	void Init(DaisyPod *phw, float SR) override;
 	float Process() override;
 	
 	virtual void NoteOn(NoteOnEvent *p) override;
 	virtual void NoteOff(NoteOffEvent *p) override;
-	
+	virtual void SetFreq(float freq) override;
+
 	void SetCC0(uint8_t value) override;
 	void SetCC1(uint8_t value) override;
 	void SetCC2(uint8_t value) override;
 	void SetCC3(uint8_t value) override;
 	void SetCC4(uint8_t value) override;
 	void SetCC5(uint8_t value) override;
+	
+	void ProcessParm0() override;
+	void ProcessParm1() override;
+	void ProcessParm2() override;
+	void ProcessParm3() override;
 	
 	void Panic() override;
 	
@@ -252,14 +311,20 @@ private:
 	void StartNote(uint8_t i, NoteOnEvent *p);
 	
 	bool ADSROn;
-	void SetADSRAttackCC(uint8_t value);
+	
+	void SetADSRAttack(float v);
 	float ADSRAttack;
-	void SetADSRDecayCC(uint8_t value);
+	void SetADSRDecay(float v);
 	float ADSRDecay;
-	void SetADSRSustainCC(uint8_t value);
+	void SetADSRSustain(float v);
 	float ADSRSustain;
-	void SetADSRReleaseCC(uint8_t value);
+	void SetADSRRelease(float v);
 	float ADSRRelease;
+	
+	Parameter ADSRAttackPotParm; // sets range and plot 
+	Parameter ADSRDecayPotParm; // sets range and plot 
+	Parameter ADSRSustainPotParm; // sets range and plot 
+	Parameter ADSRReleasePotParm; // sets range and plot 
 
 	void SetFormantFreqCC(uint8_t value);
 	float formantFreq; 
@@ -323,16 +388,25 @@ private:
 class NoiseVoice : public NullVoice
 {
 public:
-	void Init(float SR) override;
+	void Init(DaisyPod *phw, float SR) override;
 	float Process() override;
 	
 	void NoteOn(NoteOnEvent *p) override;
 	void NoteOff(NoteOffEvent *p) override;
-	
+	void SetFreq(float freq) override;
+
 	void SetCC0(uint8_t value) override;
 	void SetCC1(uint8_t value) override;
 	void SetCC2(uint8_t value) override;
 	void SetCC3(uint8_t value) override;
+	
+	void ProcessParm0() override;
+	void ProcessParm1() override;
+	void ProcessParm2() override;
+	void ProcessParm3() override;
+	void ProcessParm4() override;
+	void ProcessParm5() override;
+
 	
 	void Panic() override;
 	
@@ -341,23 +415,31 @@ private:
 	Adsr adsr[MAX_POLYPHONY]; 
 	
 	void StartNote(uint8_t i, NoteOnEvent *p);
-
+	
+	void SetResonance(float v);
+	float resonance;
+	void SetDrive(float v);
+	float drive;
+	
 	bool ADSROn;
-	void SetADSRAttackCC(uint8_t value);
+
+	void SetADSRAttack(float v);
 	float ADSRAttack;
-	void SetADSRDecayCC(uint8_t value);
+	void SetADSRDecay(float v);
 	float ADSRDecay;
-	void SetADSRSustainCC(uint8_t value);
+	void SetADSRSustain(float v);
 	float ADSRSustain;
-	void SetADSRReleaseCC(uint8_t value);
+	void SetADSRRelease(float v);
 	float ADSRRelease;
 	
-	void SetResonanceCC(uint8_t value);
-	float resonance;
-	void SetDriveCC(uint8_t value);
-	float drive;
+	Parameter ADSRAttackPotParm; // sets range and plot 
+	Parameter ADSRDecayPotParm; // sets range and plot 
+	Parameter ADSRSustainPotParm; // sets range and plot 
+	Parameter ADSRReleasePotParm; // sets range and plot 
+	Parameter ResonancePotParm; // sets range and plot 
+	Parameter DrivePotParm; // sets range and plot 
 
-	
+
 };
 
 
@@ -380,13 +462,19 @@ class Voices : public CCMIDIMapable
 	
 	void NoteOn(NoteOnEvent *p);
 	void NoteOff(NoteOffEvent *p);
-	
+	void SetFreq(float freq);
+
 	void SetCC0(uint8_t value);
 	void SetCC1(uint8_t value);
 	void SetCC2(uint8_t value);
 	void SetCC3(uint8_t value);
 	
 	void CCProcess(uint8_t ccFuncNumber, uint8_t value);
+
+	void ProcessParm0();
+	void ProcessParm1();
+	void ProcessParm2();
+	void ProcessParm3();
 
 	
 	private:

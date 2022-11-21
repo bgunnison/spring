@@ -11,24 +11,24 @@
     </CatchpointConfiguration>
     <MaskInterruptsWhileStepping>false</MaskInterruptsWhileStepping>
     <MemoryWindowPreferences />
-    <LiveVariables />
-    <NestedLiveVariables>
-      <NestedVariableSettingsCollection>
-        <ID>com.sysprogs.AllGlobals</ID>
-        <Variables />
-      </NestedVariableSettingsCollection>
-      <NestedVariableSettingsCollection>
-        <ID>com.sysprogs.SpecificVariables</ID>
-        <Variables />
-      </NestedVariableSettingsCollection>
-    </NestedLiveVariables>
+    <a />
+    <e>
+      <c>
+        <b>com.sysprogs.AllGlobals</b>
+        <a />
+      </c>
+      <c>
+        <b>com.sysprogs.SpecificVariables</b>
+        <a />
+      </c>
+    </e>
+    <d>
+      <a>SpecificVariables</a>
+      <b>false</b>
+    </d>
     <Suggestions>
       <HardwareRegisterFilters />
     </Suggestions>
-    <LiveVariablePreferences>
-      <ViewMode>SpecificVariables</ViewMode>
-      <FavoritesOnly>false</FavoritesOnly>
-    </LiveVariablePreferences>
     <HardwareRegisters />
   </DebugPreferences>
 </VisualGDBUserPreferences>

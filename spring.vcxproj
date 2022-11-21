@@ -14,7 +14,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{9B81B162-E3DF-4706-938C-CAF2ABBF761C}</ProjectGuid>
     <BSP_ID>com.sysprogs.arm.stm32</BSP_ID>
-    <BSP_VERSION>2022.01</BSP_VERSION>
+    <BSP_VERSION>2022.08</BSP_VERSION>
     <InPlaceBSPSubdir />
     <RelativeBSPPath />
   </PropertyGroup>
@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\daisyexamples\libDaisy\core\startup_stm32h750xx.c" />
+    <ClCompile Include="controlmap.cpp" />
     <ClCompile Include="filter.cpp" />
     <ClCompile Include="formantvoice.cpp" />
     <ClCompile Include="hihatvoice.cpp" />
@@ -89,6 +90,7 @@
     <ClCompile Include="voice.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="controlmap.h" />
     <ClInclude Include="filter.h" />
     <ClInclude Include="midimap.h" />
     <ClInclude Include="utilities.h" />

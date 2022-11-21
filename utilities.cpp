@@ -85,6 +85,9 @@ void ComInit(DaisyPod *hw)
 	hw->seed.usb_handle.SetReceiveCallback( echo_rx_callback, UsbHandle::FS_INTERNAL);
 }
 
+// remember what the LEDs are set to
+static LED_COLOR_ON prevLED1 = LED_OFF;
+static LED_COLOR_ON prevLED2 = LED_OFF;
 
 
 void RotateRGB(float &r, float &g, float &b)
@@ -116,6 +119,114 @@ void RotateRGB(float &r, float &g, float &b)
 	return;
 }
 
+
+void SetLEDs(LED_COLOR_ON led1, LED_COLOR_ON led2, bool blinked)
+{	
+	float rgb1[3];
+	float rgb2[3];
+	
+	if (blinked == false)
+	{
+		prevLED1 = led1;
+		prevLED2 = led2;		
+	}
+
+	switch (led1)
+	{
+	case RED_ON:
+		rgb1[0] = 1.0;
+		rgb1[1] = 0.0;
+		rgb1[2] = 0.0;
+		break;
+		
+	case GREEN_ON:
+		rgb1[0] = 0.0;
+		rgb1[1] = 1.0;
+		rgb1[2] = 0.0;
+		break;
+	
+	case BLUE_ON:
+		rgb1[0] = 0.0;
+		rgb1[1] = 0.0;
+		rgb1[2] = 1.0;
+		break;
+		
+	case LED_OFF:
+		rgb1[0] = 0.0;
+		rgb1[1] = 0.0;
+		rgb1[2] = 0.0;
+		break;
+		
+	default:
+		return;
+	}
+	
+	switch (led2)
+	{
+	case RED_ON:
+		rgb2[0] = 1.0;
+		rgb2[1] = 0.0;
+		rgb2[2] = 0.0;
+		break;
+		
+	case GREEN_ON:
+		rgb2[0] = 0.0;
+		rgb2[1] = 1.0;
+		rgb2[2] = 0.0;
+		break;
+	
+	case BLUE_ON:
+		rgb2[0] = 0.0;
+		rgb2[1] = 0.0;
+		rgb2[2] = 1.0;
+		break;
+		
+	case LED_OFF:
+		rgb2[0] = 0.0;
+		rgb2[1] = 0.0;
+		rgb2[2] = 0.0;
+		break;
+
+	default:
+		return;
+	}
+	
+	hw.led1.Set(rgb1[0], rgb1[1], rgb1[2]);
+	hw.led2.Set(rgb2[0], rgb2[1], rgb2[2]);
+	hw.UpdateLeds();
+}
+
+static uint32_t ledtimeout = 0;
+static uint32_t startTimer = 0;
+
+void BlinkLEDs(uint16_t msec, LED_COLOR_ON led1, LED_COLOR_ON led2)
+{
+	ledtimeout = msec;
+	startTimer = System::GetNow();
+		
+	SetLEDs(led1, led2, true);
+}
+
+
+
+// called in main loop
+void ResetLEDs()
+{
+	if (startTimer == 0)
+	{
+		return;
+	}
+	
+	uint32_t tp = System::GetNow() - startTimer;
+	if (tp < ledtimeout)
+	{
+		return;
+	}
+
+	SetLEDs(prevLED1, prevLED2);
+	
+	startTimer = 0;
+}
 
 void RotateLED(uint8_t led)
 {

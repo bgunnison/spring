@@ -30,6 +30,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "voice.h"
 #include "filter.h"
 #include "midimap.h"
+#include "controlmap.h"
 
 using namespace daisy;
 using namespace daisysp;
@@ -41,20 +42,22 @@ DaisyPod   hw;
 CpuLoadMeter loadMeter;
 Voices  voice;
 Filters filt;
-Parameter volumePot;
 CCMIDIMap ccmap;
 PCMIDIMap pcmap;
 CCMIDINoteMap noteMap;
+ControlMap standAloneController;
 
 float sampleRate;
-float finalGain;
+float finalGainLeft;
+float finalGainRight;
 
 uint32_t noteCounter = 0;
 uint32_t outClipIndicator = 0;
 
+#define LOG_CPU_LOAD 0
+#if LOG_CPU_LOAD
 uint8_t currentCpuLoad = 0;
-
-
+#endif
 
 void logMidiEvent(MidiEvent *m)
 {	
@@ -85,8 +88,6 @@ void logMidiEvent(MidiEvent *m)
 		 
 		log("%d - PG:\t%d\t%d\t%d", noteCounter, p.channel, p.program);	
 	}
-	
-	
 
 	noteCounter++;
 }
@@ -97,42 +98,37 @@ void UpdateControls()
 	hw.ProcessAnalogControls();
 	hw.ProcessDigitalControls();
 
-	// returns 0 - max
-	finalGain = volumePot.Process();
-	
-	//Returns + 1 if the encoder was turned clockwise, -1 if it was turned counter - clockwise, or 0 if it was not just turned.
-	//voice.Select(hw.encoder.Increment());	}
-	
-	// use button1 for voice select
-	voice.Select(hw.button1.RisingEdge());
-	filt.Select(hw.button2.RisingEdge());
+	standAloneController.Control();
 }
 
 
-void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
-	AudioHandle::InterleavingOutputBuffer out,
-	size_t                                size)
+void AudioCallback(AudioHandle::InterleavingInputBuffer  in, AudioHandle::InterleavingOutputBuffer out, size_t size)
 {
 	float sig = 0;
-	loadMeter.OnBlockStart();
 	
+#if LOG_CPU_LOAD
+	loadMeter.OnBlockStart();
+#endif
+
 	UpdateControls();
 
 	for (size_t i = 0; i < size; i += 2)
 	{
-		sig = filt.Process(voice.Process()) * finalGain; 
+		sig = filt.Process(voice.Process());
 		
-		if (sig > 1.0)
+		out[i] = sig * finalGainLeft;
+	    out[i + 1] = sig * finalGainRight;
+		
+		if (out[i] > 1.0 || out[i+1] > 1.0)
 		{
 			outClipIndicator++;
 		}
-		
-		out[i] = out[i + 1] = sig;
 	}
 	
-	loadMeter.OnBlockEnd();
-	
+#if LOG_CPU_LOAD
+	loadMeter.OnBlockEnd();	
 	currentCpuLoad = (uint8_t)(loadMeter.GetAvgCpuLoad() * 100);
+#endif
 
 }
 
@@ -151,7 +147,7 @@ void HandleMidiMessage(MidiEvent m)
 		{
 			//logMidiNote(&m);
 			NoteOnEvent p = m.AsNoteOn();
-			RotateLED(2);
+			BlinkLEDs(100, LED_OFF, LED_OFF);
 			p = m.AsNoteOn();
 			p.note = noteMap.Process(p.note);
 			voice.NoteOn(&p); 					
@@ -179,7 +175,7 @@ void HandleMidiMessage(MidiEvent m)
 
 void SetCCFinalGain(uint8_t value)
 {
-	finalGain = float(value) / 127.0f;
+	finalGainLeft = finalGainRight = float(value) / 127.0f;
 }
 
 // Main -- Init, and Midi Handling
@@ -195,22 +191,19 @@ int main(void)
 	sampleRate = hw.AudioSampleRate();
 	voice.Init(&hw, sampleRate);
 	
-	filt.Init(sampleRate);
+	filt.Init(&hw, sampleRate);
 	
 	loadMeter.Init(sampleRate, AUDIO_BLOCK_SIZE);
-	
-	// allow clipping and adjust for low volume voices
-	volumePot.Init(hw.knob1, 0, 16, Parameter::LOGARITHMIC);
 	
 	ccmap.Init();
 	pcmap.Init();
 	noteMap.Init();
 	
 	//ccmap.Add(7, SetCCFinalGain);
-	SetAlesisV125MIDIMap(&ccmap, &noteMap, &voice, &filt);
-	
-	finalGain = 1.0;
-	
+	// make up your mind
+	//SetAlesisV125MIDIMap(&ccmap, &noteMap, &voice, &filt);
+	standAloneController.Init(&hw, &voice, &filt, &finalGainRight, &finalGainLeft);
+		
 	log("Init end");
 
 	// Start stuff.
@@ -218,12 +211,14 @@ int main(void)
 	hw.StartAudio(AudioCallback);
 	hw.midi.StartReceive();
 
+#if LOG_CPU_LOAD
 	uint8_t cpuLoad = 0;
+#endif
 	
 	uint32_t now = 0;
 	for (;;)
 	{
-		
+#if LOG_CPU_LOAD		
 		uint32_t tp = System::GetNow() - now;
 		if (tp > 5000)
 		{
@@ -232,7 +227,8 @@ int main(void)
 			cpuLoad = currentCpuLoad;
 			log("Ave CPU load Peak: %d", cpuLoad);
 		}
-		
+#endif
+
 		hw.midi.Listen();
 		// Handle MIDI Events
 		while (hw.midi.HasEvents())
@@ -240,7 +236,7 @@ int main(void)
 			HandleMidiMessage(hw.midi.PopEvent());
 		}
 				
-		voice.UpdateBackGround();
+		//voice.UpdateBackGround();
 		if (outClipIndicator > 0)
 		{
 			hw.seed.SetLed(true);
@@ -251,5 +247,6 @@ int main(void)
 			hw.seed.SetLed(false);
 		}
 		
+		ResetLEDs();
 	}
 }

@@ -30,7 +30,7 @@ using namespace daisy;
 using namespace daisysp;
 
 
-void Filters::Init(float sr) 
+void Filters::Init(DaisyPod *phw, float sr) 
 { 
 	sampleRate = sr;
 	currentFilterSelector = NO_FILTER; 
@@ -39,6 +39,9 @@ void Filters::Init(float sr)
 	
 	sfilter.Init(sampleRate);
 	mfilter.Init(sampleRate);
+	
+	freqPotParm.Init(phw->knob1, 10, sr/3, Parameter::EXPONENTIAL); // sets range and plot of freq pot
+	resPotParm.Init(phw->knob2, 0, 1, Parameter::LINEAR); // sets range and plot of resonance pot
 }
 
 
@@ -93,6 +96,17 @@ void Filters::Select(int8_t sel)
 	
 	ChangeFilter(currentFilterSelector);
 	
+}
+
+void Filters::ProcessFreq() 
+{
+	pfilter->SetFreq(freqPotParm.Process());
+}
+
+
+void Filters::ProcessRes() 
+{
+	pfilter->SetRes(resPotParm.Process());
 }
 
 

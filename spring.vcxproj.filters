@@ -72,6 +72,9 @@
     <ClCompile Include="formantvoice.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="controlmap.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="voice.h">
@@ -84,6 +87,9 @@
       <Filter>Source files</Filter>
     </ClInclude>
     <ClInclude Include="midimap.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="controlmap.h">
       <Filter>Source files</Filter>
     </ClInclude>
   </ItemGroup>

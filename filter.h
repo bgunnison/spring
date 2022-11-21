@@ -78,7 +78,7 @@ class Filters : public CCMIDIMapable
 public:
 	Filters() {}
 		
-	void Init(float sampleRate); 
+	void Init(DaisyPod *phw, float sampleRate); 
 	
 	// 1/-1 rotates thru filters, 0 does nothing
 	void Select(int8_t sel);
@@ -91,12 +91,17 @@ public:
 	// adjusts filter parms or selects specific filter via MIDI map
 	void CCProcess(uint8_t ccFuncNumber, uint8_t value);
 
-	
+	void ProcessFreq(); // set via analog pot
+	void ProcessRes(); // set via analog pot
+
 
 private:
 	float sampleRate;	
 	uint8_t currentFilterSelector;
 	
+	Parameter freqPotParm; // sets range and plot of freq pot
+	Parameter resPotParm; // sets range and plot of resonance pot
+
 	typedef enum
 	{
 		NO_FILTER,

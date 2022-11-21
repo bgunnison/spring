@@ -30,9 +30,9 @@ using namespace daisy;
 using namespace daisysp;
 
 
-void OscVoice::Init(float SR) 
+void OscVoice::Init(DaisyPod *phw, float SR) 
 {
-	NullVoice::Init(SR);
+	NullVoice::Init(phw, SR);
 	polyphony = OSC_VOICE_POLYPHONY;
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
@@ -51,8 +51,14 @@ void OscVoice::Init(float SR)
 		adsr[i].SetDecayTime(ADSRDecay);
 		adsr[i].SetSustainLevel(ADSRSustain);
 		adsr[i].SetReleaseTime(ADSRRelease);
-	}	
+	}
 	
+	// See controlmap
+	ADSRAttackPotParm.Init(hw->knob1, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX, Parameter::LINEAR);
+	ADSRDecayPotParm.Init(hw->knob2, ADSR_DECAY_MIN, ADSR_DECAY_MAX, Parameter::LINEAR);
+	ADSRSustainPotParm.Init(hw->knob1, ADSR_SUSTAIN_MIN, ADSR_SUSTAIN_MAX, Parameter::LINEAR);
+	ADSRReleasePotParm.Init(hw->knob2, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX, Parameter::LINEAR);
+
 	Panic();
 }
 
@@ -118,6 +124,13 @@ void OscVoice::NoteOff(NoteOffEvent *p)
 }
 
 
+void OscVoice::SetFreq(float f)
+{
+	//synth[0].SetFreq(f);
+	//synth[0].SetAmp(1);
+}
+
+
 float OscVoice::Process(void) 
 {
 	float sig = 0.0;
@@ -139,64 +152,18 @@ float OscVoice::Process(void)
 	
 	return sig / polyphony;
 }
-	
+
 void OscVoice::SetCC0(uint8_t value)
 {
-	SetADSRAttackCC(value);
+	SetADSRAttack(GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX));
 }
 
 void OscVoice::SetCC1(uint8_t value)
 {
-	SetADSRDecayCC(value);
+	SetADSRDecay(GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX));
 }
 
 void OscVoice::SetCC2(uint8_t value)
-{
-	SetADSRSustainCC(value);
-}
-
-void OscVoice::SetCC3(uint8_t value)
-{
-	SetADSRReleaseCC(value);
-}
-
-
-
-void OscVoice::SetADSRAttackCC(uint8_t value)
-{
-	float a = GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX);
-	if (a == ADSRAttack)
-	{
-		return;
-	}
-	ADSRAttack = a;
-	log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
-	
-	for (uint8_t i = 0; i < polyphony; i++)
-	{
-		adsr[i].SetAttackTime(ADSRAttack); 
-	}
-}
-
-
-void OscVoice::SetADSRDecayCC(uint8_t value)
-{
-	float d = GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX);
-	if (d == ADSRDecay)
-	{
-		return;
-	}
-	ADSRDecay = d;
-	log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
-	
-	for (uint8_t i = 0; i < polyphony; i++)
-	{
-		adsr[i].SetDecayTime(ADSRDecay); 
-	}
-}
-
-
-void OscVoice::SetADSRSustainCC(uint8_t value)
 {
 	if (value == 127)
 	{
@@ -208,14 +175,56 @@ void OscVoice::SetADSRSustainCC(uint8_t value)
 		ADSROn = true;
 	}
 	
-	float s = value / 127.0;
-	
-	if (s == ADSRSustain)
+	SetADSRSustain(value / 127.0);
+}
+
+void OscVoice::SetCC3(uint8_t value)
+{
+	SetADSRRelease(GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX));
+}
+
+
+void OscVoice::SetADSRAttack(float a)
+{
+	if (a == ADSRAttack)
 	{
 		return;
 	}
-	ADSRSustain = s;
-	log("Sustain: %d", (uint32_t)(ADSRSustain * 1000));
+	
+	ADSRAttack = a;
+	//log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		adsr[i].SetAttackTime(ADSRAttack); 
+	}
+}
+	
+
+void OscVoice::SetADSRDecay(float v)
+{
+	if (v == ADSRDecay)
+	{
+		return;
+	}
+	ADSRDecay = v;
+	//log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		adsr[i].SetDecayTime(ADSRDecay); 
+	}
+}
+
+
+void OscVoice::SetADSRSustain(float v)
+{	
+	if (v == ADSRSustain)
+	{
+		return;
+	}
+	ADSRSustain = v;
+	//log("Sustain: %d", (uint32_t)(ADSRSustain * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
@@ -223,19 +232,43 @@ void OscVoice::SetADSRSustainCC(uint8_t value)
 	}
 }
 
-void OscVoice::SetADSRReleaseCC(uint8_t value)
+void OscVoice::SetADSRRelease(float v)
 {
-	float r = GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX);
-	if (r == ADSRRelease)
+	if (v == ADSRRelease)
 	{
 		return;
 	}
-	ADSRRelease = r;
-	log("Release: %d", (uint32_t)(ADSRRelease * 1000));
+	ADSRRelease = v;
+	//log("Release: %d", (uint32_t)(ADSRRelease * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		adsr[i].SetReleaseTime(ADSRRelease); 
 	}
 }
+
+void OscVoice::ProcessParm0()
+{
+	SetADSRAttack(ADSRAttackPotParm.Process());
+}
+
+
+void OscVoice::ProcessParm1()
+{
+	SetADSRDecay(ADSRDecayPotParm.Process());
+}
+
+
+void OscVoice::ProcessParm2()
+{
+	SetADSRSustain(ADSRSustainPotParm.Process());
+}
+
+
+void OscVoice::ProcessParm3()
+{
+	SetADSRRelease(ADSRReleasePotParm.Process());
+}
+
+
 

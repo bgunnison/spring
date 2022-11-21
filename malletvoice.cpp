@@ -29,9 +29,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using namespace daisy;
 using namespace daisysp;
 
-void MalletVoice::Init(float SR) 
+void MalletVoice::Init(DaisyPod *phw, float SR) 
 {
-	NullVoice::Init(SR);
+	NullVoice::Init(phw, SR);
 	polyphony = MALLET_VOICE_POLYPHONY;
 	
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -39,6 +39,11 @@ void MalletVoice::Init(float SR)
 		mallet[i].Init(sampleRate);
 	}	
 	
+	DampingPotParm.Init(hw->knob1, 0, 1, Parameter::LINEAR);
+	StructurePotParm.Init(hw->knob2, 0, 1, Parameter::LINEAR); // sets range and plot 
+	BrightnessPotParm.Init(hw->knob1, 0, 1, Parameter::LINEAR); // sets range and plot 
+	AccentPotParm.Init(hw->knob2, 0, 1, Parameter::LINEAR); // sets range and plot 
+
 	Panic();
 }
 
@@ -98,6 +103,11 @@ void MalletVoice::NoteOff(NoteOffEvent *p)
 }
 
 
+void MalletVoice::SetFreq(float f)
+{
+	
+}
+
 float MalletVoice::Process(void) 
 {
 	float sig = 0.0;
@@ -109,37 +119,15 @@ float MalletVoice::Process(void)
 	return sig / polyphony;
 }
 	
-void MalletVoice::SetCC0(uint8_t value)
+
+void MalletVoice::SetDamping(float v)
 {
-	SetDampingCC(value);
-}
-
-void MalletVoice::SetCC1(uint8_t value)
-{
-	SetStructureCC(value);
-}
-
-void MalletVoice::SetCC2(uint8_t value)
-{
-	SetBrightnessCC(value);
-}
-
-void MalletVoice::SetCC3(uint8_t value)
-{
-	SetAccentCC(value);
-}
-
-
-
-void MalletVoice::SetDampingCC(uint8_t value)
-{
-	float set = (float)value / 127.0;
-	if (set == damping)
+	if (v == damping)
 	{
 		return;
 	}
 	
-	damping = set;
+	damping = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		mallet[i].SetDamping(damping);
@@ -147,15 +135,14 @@ void MalletVoice::SetDampingCC(uint8_t value)
 }
 
 
-void MalletVoice::SetStructureCC(uint8_t value)
+void MalletVoice::SetStructure(float v)
 {
-	float set = (float)value / 127.0;
-	if (set == structure)
+	if (v == structure)
 	{
 		return;
 	}
 	
-	structure = set;
+	structure = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		mallet[i].SetStructure(structure);
@@ -163,15 +150,14 @@ void MalletVoice::SetStructureCC(uint8_t value)
 }
 
 
-void MalletVoice::SetBrightnessCC(uint8_t value)
+void MalletVoice::SetBrightness(float v)
 {
-	float set = (float)value / 127.0;
-	if (set == brightness)
+	if (v == brightness)
 	{
 		return;
 	}
 	
-	brightness = set;
+	brightness = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		mallet[i].SetBrightness(brightness);
@@ -179,19 +165,62 @@ void MalletVoice::SetBrightnessCC(uint8_t value)
 }
 
 
-void MalletVoice::SetAccentCC(uint8_t value)
+void MalletVoice::SetAccent(float v)
 {
-	float set = (float)value / 127.0;
-	if (set == accent)
+	if (v == accent)
 	{
 		return;
 	}
 	
-	accent = set;
+	accent = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		mallet[i].SetAccent(accent);
 	}
 }
+
+
+void MalletVoice::ProcessParm0()
+{
+	SetDamping(DampingPotParm.Process());
+}
+
+
+void MalletVoice::ProcessParm1()
+{
+	SetStructure(StructurePotParm.Process());
+}
+
+void MalletVoice::ProcessParm2()
+{
+	SetBrightness(BrightnessPotParm.Process());
+}
+
+void MalletVoice::ProcessParm3()
+{
+	SetAccent(AccentPotParm.Process());
+}
+
+	
+void MalletVoice::SetCC0(uint8_t value)
+{
+	SetDamping(value / 127.0);
+}
+
+void MalletVoice::SetCC1(uint8_t value)
+{
+	SetStructure(value / 127.0);
+}
+
+void MalletVoice::SetCC2(uint8_t value)
+{
+	SetBrightness(value / 127.0);
+}
+
+void MalletVoice::SetCC3(uint8_t value)
+{
+	SetAccent(value / 127.0);
+}
+
 
 

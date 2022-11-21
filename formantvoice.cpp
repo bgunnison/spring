@@ -30,9 +30,9 @@ using namespace daisy;
 using namespace daisysp;
 
 
-void FormantVoice::Init(float SR) 
+void FormantVoice::Init(DaisyPod *phw, float SR) 
 {
-	NullVoice::Init(SR);
+	NullVoice::Init(phw, SR);
 	polyphony = FORMANT_VOICE_POLYPHONY;
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
@@ -52,6 +52,12 @@ void FormantVoice::Init(float SR)
 		adsr[i].SetSustainLevel(ADSRSustain);
 		adsr[i].SetReleaseTime(ADSRRelease);
 	}	
+	
+	// See controlmap
+	ADSRAttackPotParm.Init(hw->knob1, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX, Parameter::LINEAR);
+	ADSRDecayPotParm.Init(hw->knob2, ADSR_DECAY_MIN, ADSR_DECAY_MAX, Parameter::LINEAR);
+	ADSRSustainPotParm.Init(hw->knob1, ADSR_SUSTAIN_MIN, ADSR_SUSTAIN_MAX, Parameter::LINEAR);
+	ADSRReleasePotParm.Init(hw->knob2, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX, Parameter::LINEAR);
 	
 	Panic();
 }
@@ -74,9 +80,7 @@ void FormantVoice::StartNote(uint8_t i, NoteOnEvent *p)
 			
 	formant[i].SetCarrierFreq(mtof(p->note));
 	adsr[i].Retrigger(false); // set attack mode
-	
 }
-
 
 void FormantVoice::NoteOn(NoteOnEvent *p)
 {
@@ -111,6 +115,11 @@ void FormantVoice::NoteOff(NoteOffEvent *p)
 }
 
 
+void FormantVoice::SetFreq(float f)
+{
+	
+}
+
 float FormantVoice::Process(void) 
 {
 	float sig = 0.0;
@@ -133,25 +142,6 @@ float FormantVoice::Process(void)
 	return sig / polyphony;
 }
 	
-void FormantVoice::SetCC0(uint8_t value)
-{
-	SetADSRAttackCC(value);
-}
-
-void FormantVoice::SetCC1(uint8_t value)
-{
-	SetADSRDecayCC(value);
-}
-
-void FormantVoice::SetCC2(uint8_t value)
-{
-	SetADSRSustainCC(value);
-}
-
-void FormantVoice::SetCC3(uint8_t value)
-{
-	SetADSRReleaseCC(value);
-}
 
 void FormantVoice::SetCC4(uint8_t value)
 {
@@ -199,41 +189,17 @@ void FormantVoice::SetPhaseShiftCC(uint8_t value)
 }
 
 
-void FormantVoice::SetADSRAttackCC(uint8_t value)
+void FormantVoice::SetCC0(uint8_t value)
 {
-	float a = GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX);
-	if (a == ADSRAttack)
-	{
-		return;
-	}
-	ADSRAttack = a;
-	//log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
-	
-	for (uint8_t i = 0; i < polyphony; i++)
-	{
-		adsr[i].SetAttackTime(ADSRAttack); 
-	}
+	SetADSRAttack(GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX));
 }
 
-
-void FormantVoice::SetADSRDecayCC(uint8_t value)
+void FormantVoice::SetCC1(uint8_t value)
 {
-	float d = GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX);
-	if (d == ADSRDecay)
-	{
-		return;
-	}
-	ADSRDecay = d;
-	//log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
-	
-	for (uint8_t i = 0; i < polyphony; i++)
-	{
-		adsr[i].SetDecayTime(ADSRDecay); 
-	}
+	SetADSRDecay(GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX));
 }
 
-
-void FormantVoice::SetADSRSustainCC(uint8_t value)
+void FormantVoice::SetCC2(uint8_t value)
 {
 	if (value == 127)
 	{
@@ -245,13 +211,55 @@ void FormantVoice::SetADSRSustainCC(uint8_t value)
 		ADSROn = true;
 	}
 	
-	float s = value / 127.0;
-	
-	if (s == ADSRSustain)
+	SetADSRSustain(value / 127.0);
+}
+
+void FormantVoice::SetCC3(uint8_t value)
+{
+	SetADSRRelease(GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX));
+}
+
+
+void FormantVoice::SetADSRAttack(float a)
+{
+	if (a == ADSRAttack)
 	{
 		return;
 	}
-	ADSRSustain = s;
+	
+	ADSRAttack = a;
+	//log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		adsr[i].SetAttackTime(ADSRAttack); 
+	}
+}
+	
+
+void FormantVoice::SetADSRDecay(float v)
+{
+	if (v == ADSRDecay)
+	{
+		return;
+	}
+	ADSRDecay = v;
+	//log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		adsr[i].SetDecayTime(ADSRDecay); 
+	}
+}
+
+
+void FormantVoice::SetADSRSustain(float v)
+{	
+	if (v == ADSRSustain)
+	{
+		return;
+	}
+	ADSRSustain = v;
 	//log("Sustain: %d", (uint32_t)(ADSRSustain * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -260,14 +268,13 @@ void FormantVoice::SetADSRSustainCC(uint8_t value)
 	}
 }
 
-void FormantVoice::SetADSRReleaseCC(uint8_t value)
+void FormantVoice::SetADSRRelease(float v)
 {
-	float r = GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX);
-	if (r == ADSRRelease)
+	if (v == ADSRRelease)
 	{
 		return;
 	}
-	ADSRRelease = r;
+	ADSRRelease = v;
 	//log("Release: %d", (uint32_t)(ADSRRelease * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -275,4 +282,28 @@ void FormantVoice::SetADSRReleaseCC(uint8_t value)
 		adsr[i].SetReleaseTime(ADSRRelease); 
 	}
 }
+
+void FormantVoice::ProcessParm0()
+{
+	SetADSRAttack(ADSRAttackPotParm.Process());
+}
+
+
+void FormantVoice::ProcessParm1()
+{
+	SetADSRDecay(ADSRDecayPotParm.Process());
+}
+
+
+void FormantVoice::ProcessParm2()
+{
+	SetADSRSustain(ADSRSustainPotParm.Process());
+}
+
+
+void FormantVoice::ProcessParm3()
+{
+	SetADSRRelease(ADSRReleasePotParm.Process());
+}
+
 

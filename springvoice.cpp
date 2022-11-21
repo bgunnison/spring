@@ -29,9 +29,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using namespace daisy;
 using namespace daisysp;
 
-void SpringVoice::Init(float SR) 
+void SpringVoice::Init(DaisyPod *phw, float SR) 
 {
-	NullVoice::Init(SR);
+	NullVoice::Init(phw, SR);
 	polyphony = SPRING_VOICE_POLYPHONY;
 	
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -39,6 +39,11 @@ void SpringVoice::Init(float SR)
 		spring[i].Init(sampleRate);
 	}	
 	
+	DampingPotParm.Init(hw->knob1, 0, 1, Parameter::LINEAR);
+	StructurePotParm.Init(hw->knob2, 0, 1, Parameter::LINEAR); // sets range and plot 
+	BrightnessPotParm.Init(hw->knob1, 0, 1, Parameter::LINEAR); // sets range and plot 
+	AccentPotParm.Init(hw->knob2, 0, 1, Parameter::LINEAR); // sets range and plot 
+
 	Panic();
 }
 
@@ -108,38 +113,22 @@ float SpringVoice::Process(void)
 	
 	return sig / polyphony;
 }
+
+
+void SpringVoice::SetFreq(float f)
+{
 	
-void SpringVoice::SetCC0(uint8_t value)
-{
-	SetDampingCC(value);
-}
-
-void SpringVoice::SetCC1(uint8_t value)
-{
-	SetStructureCC(value);
-}
-
-void SpringVoice::SetCC2(uint8_t value)
-{
-	SetBrightnessCC(value);
-}
-
-void SpringVoice::SetCC3(uint8_t value)
-{
-	SetAccentCC(value);
 }
 
 
-
-void SpringVoice::SetDampingCC(uint8_t value)
+void SpringVoice::SetDamping(float v)
 {
-	float set = (float)value / 127.0;
-	if (set == damping)
+	if (v == damping)
 	{
 		return;
 	}
 	
-	damping = set;
+	damping = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetDamping(damping);
@@ -147,15 +136,14 @@ void SpringVoice::SetDampingCC(uint8_t value)
 }
 
 
-void SpringVoice::SetStructureCC(uint8_t value)
+void SpringVoice::SetStructure(float v)
 {
-	float set = (float)value / 127.0;
-	if (set == structure)
+	if (v == structure)
 	{
 		return;
 	}
 	
-	structure = set;
+	structure = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetStructure(structure);
@@ -163,15 +151,14 @@ void SpringVoice::SetStructureCC(uint8_t value)
 }
 
 
-void SpringVoice::SetBrightnessCC(uint8_t value)
+void SpringVoice::SetBrightness(float v)
 {
-	float set = (float)value / 127.0;
-	if (set == brightness)
+	if (v == brightness)
 	{
 		return;
 	}
 	
-	brightness = set;
+	brightness = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetBrightness(brightness);
@@ -179,19 +166,60 @@ void SpringVoice::SetBrightnessCC(uint8_t value)
 }
 
 
-void SpringVoice::SetAccentCC(uint8_t value)
+void SpringVoice::SetAccent(float v)
 {
-	float set = (float)value / 127.0;
-	if (set == accent)
+	if (v == accent)
 	{
 		return;
 	}
 	
-	accent = set;
+	accent = v;
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
 		spring[i].SetAccent(accent);
 	}
 }
 
+
+void SpringVoice::ProcessParm0()
+{
+	SetDamping(DampingPotParm.Process());
+}
+
+
+void SpringVoice::ProcessParm1()
+{
+	SetStructure(StructurePotParm.Process());
+}
+
+void SpringVoice::ProcessParm2()
+{
+	SetBrightness(BrightnessPotParm.Process());
+}
+
+void SpringVoice::ProcessParm3()
+{
+	SetAccent(AccentPotParm.Process());
+}
+
+	
+void SpringVoice::SetCC0(uint8_t value)
+{
+	SetDamping(value / 127.0);
+}
+
+void SpringVoice::SetCC1(uint8_t value)
+{
+	SetStructure(value / 127.0);
+}
+
+void SpringVoice::SetCC2(uint8_t value)
+{
+	SetBrightness(value / 127.0);
+}
+
+void SpringVoice::SetCC3(uint8_t value)
+{
+	SetAccent(value / 127.0);
+}
 

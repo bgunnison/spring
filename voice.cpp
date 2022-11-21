@@ -29,10 +29,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using namespace daisy;
 using namespace daisysp;
 
-void NullVoice::Init(float SR)
+void NullVoice::Init(DaisyPod *phw, float SR)
 {
 	sampleRate = SR;
 	polyphony = 0;
+	hw = phw;
 	Panic();
 }
 
@@ -53,11 +54,11 @@ void Voices::Init(DaisyPod *pod, float SR)
 	phw = pod; 
 	sampleRate = SR; 
 	currentVoiceSelector = 0; 
-	oscVoice.Init(sampleRate);
-	springVoice.Init(sampleRate);
-	malletVoice.Init(sampleRate);
-	formantVoice.Init(sampleRate);
-	noiseVoice.Init(sampleRate);
+	oscVoice.Init(phw, sampleRate);
+	springVoice.Init(phw, sampleRate);
+	malletVoice.Init(phw, sampleRate);
+	formantVoice.Init(phw, sampleRate);
+	noiseVoice.Init(phw, sampleRate);
 	
 	pvoice = &oscVoice;
 }
@@ -139,8 +140,6 @@ void Voices::Select(int8_t sel)
 	currentVoiceSelector = s;
 	
 	ChangeVoice(currentVoiceSelector);
-	
-	
 }
 
 void Voices::UpdateBackGround(void)
@@ -191,6 +190,10 @@ void Voices::NoteOff(NoteOffEvent *p)
 	pvoice->NoteOff(p);
 }
 
+void Voices::SetFreq(float f)
+{
+	pvoice->SetFreq(f);
+}
 	
 void Voices::SetCC0(uint8_t value)
 {	
@@ -267,4 +270,24 @@ void Voices::CCProcess(uint8_t ccFuncNumber, uint8_t value)
 		
 	}
 }
-	
+
+void Voices::ProcessParm0()
+{
+	pvoice->ProcessParm0();
+}
+
+void Voices::ProcessParm1()
+{
+	pvoice->ProcessParm1();
+}
+
+void Voices::ProcessParm2()
+{
+	pvoice->ProcessParm2();
+}
+
+void Voices::ProcessParm3()
+{
+	pvoice->ProcessParm3();
+}
+

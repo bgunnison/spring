@@ -98,9 +98,9 @@ void NoiseFilter::SetDrive(float drive)
 
 
 
-void NoiseVoice::Init(float SR) 
+void NoiseVoice::Init(DaisyPod *phw, float SR) 
 {
-	NullVoice::Init(SR);
+	NullVoice::Init(phw, SR);
 	polyphony = NOISE_VOICE_POLYPHONY;
 	ADSROn = true;
 	ADSRAttack = ADSR_ATTACK_DEFAULT;
@@ -126,6 +126,14 @@ void NoiseVoice::Init(float SR)
 		adsr[i].SetReleaseTime(ADSRRelease);
 	}	
 	
+	// See controlmap
+	ADSRAttackPotParm.Init(hw->knob1, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX, Parameter::LINEAR);
+	ADSRDecayPotParm.Init(hw->knob2, ADSR_DECAY_MIN, ADSR_DECAY_MAX, Parameter::LINEAR);
+	ADSRSustainPotParm.Init(hw->knob1, ADSR_SUSTAIN_MIN, ADSR_SUSTAIN_MAX, Parameter::LINEAR);
+	ADSRReleasePotParm.Init(hw->knob2, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX, Parameter::LINEAR);
+	ResonancePotParm.Init(hw->knob1, 0.0, 1.0, Parameter::LINEAR);
+	DrivePotParm.Init(hw->knob2, 0.0, 1.0, Parameter::LINEAR);
+
 	Panic();
 }
 
@@ -191,6 +199,12 @@ void NoiseVoice::NoteOff(NoteOffEvent *p)
 }
 
 
+void NoiseVoice::SetFreq(float f)
+{
+	
+}
+
+
 float NoiseVoice::Process(void) 
 {
 	float sig = 0.0;
@@ -213,42 +227,16 @@ float NoiseVoice::Process(void)
 	return sig / polyphony;
 }
 
-void NoiseVoice::SetCC0(uint8_t value)
+
+void NoiseVoice::SetResonance(float v)
 {
-	SetResonanceCC(value);
-}
-	
-void NoiseVoice::SetCC1(uint8_t value)
-{
-	SetDriveCC(value);
-}
-
-void NoiseVoice::SetCC2(uint8_t value)
-{
-	SetADSRAttackCC(value);
-}
-
-void NoiseVoice::SetCC3(uint8_t value)
-{
-	SetADSRReleaseCC(value);
-}
-
-
-//void NoiseVoice::SetCC2(uint8_t value)
-//{
-//	SetADSRSustainCC(value);
-//}
-
-
-void NoiseVoice::SetResonanceCC(uint8_t value)
-{
-	float a = GetCCMinMax(value, 0.0, 1.0);
-	if (a == resonance)
+	//float a = GetCCMinMax(value, 0.0, 1.0);
+	if (v == resonance)
 	{
 		return;
 	}
 	
-	resonance = a;
+	resonance = v;
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
@@ -257,15 +245,15 @@ void NoiseVoice::SetResonanceCC(uint8_t value)
 }
 
 
-void NoiseVoice::SetDriveCC(uint8_t value)
+void NoiseVoice::SetDrive(float v)
 {
-	float a = GetCCMinMax(value, 0.0, 1.0);
-	if (a == drive)
+	//float a = GetCCMinMax(value, 0.0, 1.0);
+	if (v == drive)
 	{
 		return;
 	}
 	
-	drive = a;
+	drive = v;
 	
 	for (uint8_t i = 0; i < polyphony; i++)
 	{
@@ -273,41 +261,30 @@ void NoiseVoice::SetDriveCC(uint8_t value)
 	}
 }
 
-void NoiseVoice::SetADSRAttackCC(uint8_t value)
+
+void NoiseVoice::ProcessParm4()
 {
-	float a = GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX);
-	if (a == ADSRAttack)
-	{
-		return;
-	}
-	ADSRAttack = a;
-	//log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
-	
-	for (uint8_t i = 0; i < polyphony; i++)
-	{
-		adsr[i].SetAttackTime(ADSRAttack); 
-	}
+	SetResonance(ResonancePotParm.Process());
 }
 
 
-void NoiseVoice::SetADSRDecayCC(uint8_t value)
+void NoiseVoice::ProcessParm5()
 {
-	float d = GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX);
-	if (d == ADSRDecay)
-	{
-		return;
-	}
-	ADSRDecay = d;
-	//log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
-	
-	for (uint8_t i = 0; i < polyphony; i++)
-	{
-		adsr[i].SetDecayTime(ADSRDecay); 
-	}
+	SetDrive(DrivePotParm.Process());
 }
 
 
-void NoiseVoice::SetADSRSustainCC(uint8_t value)
+void NoiseVoice::SetCC0(uint8_t value)
+{
+	SetADSRAttack(GetCCMinMax(value, ADSR_ATTACK_MIN, ADSR_ATTACK_MAX));
+}
+
+void NoiseVoice::SetCC1(uint8_t value)
+{
+	SetADSRDecay(GetCCMinMax(value, ADSR_DECAY_MIN, ADSR_DECAY_MAX));
+}
+
+void NoiseVoice::SetCC2(uint8_t value)
 {
 	if (value == 127)
 	{
@@ -319,13 +296,55 @@ void NoiseVoice::SetADSRSustainCC(uint8_t value)
 		ADSROn = true;
 	}
 	
-	float s = value / 127.0;
-	
-	if (s == ADSRSustain)
+	SetADSRSustain(value / 127.0);
+}
+
+void NoiseVoice::SetCC3(uint8_t value)
+{
+	SetADSRRelease(GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX));
+}
+
+
+void NoiseVoice::SetADSRAttack(float a)
+{
+	if (a == ADSRAttack)
 	{
 		return;
 	}
-	ADSRSustain = s;
+	
+	ADSRAttack = a;
+	//log("Attack: %d msec", (uint32_t)(ADSRAttack * 1000));
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		adsr[i].SetAttackTime(ADSRAttack); 
+	}
+}
+	
+
+void NoiseVoice::SetADSRDecay(float v)
+{
+	if (v == ADSRDecay)
+	{
+		return;
+	}
+	ADSRDecay = v;
+	//log("Decay: %d", (uint32_t)(ADSRDecay * 1000));
+	
+	for (uint8_t i = 0; i < polyphony; i++)
+	{
+		adsr[i].SetDecayTime(ADSRDecay); 
+	}
+}
+
+
+void NoiseVoice::SetADSRSustain(float v)
+{	
+	if (v == ADSRSustain)
+	{
+		return;
+	}
+	ADSRSustain = v;
 	//log("Sustain: %d", (uint32_t)(ADSRSustain * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -334,14 +353,13 @@ void NoiseVoice::SetADSRSustainCC(uint8_t value)
 	}
 }
 
-void NoiseVoice::SetADSRReleaseCC(uint8_t value)
+void NoiseVoice::SetADSRRelease(float v)
 {
-	float r = GetCCMinMax(value, ADSR_RELEASE_MIN, ADSR_RELEASE_MAX);
-	if (r == ADSRRelease)
+	if (v == ADSRRelease)
 	{
 		return;
 	}
-	ADSRRelease = r;
+	ADSRRelease = v;
 	//log("Release: %d", (uint32_t)(ADSRRelease * 1000));
 
 	for (uint8_t i = 0; i < polyphony; i++)
@@ -349,4 +367,25 @@ void NoiseVoice::SetADSRReleaseCC(uint8_t value)
 		adsr[i].SetReleaseTime(ADSRRelease); 
 	}
 }
+
+void NoiseVoice::ProcessParm0()
+{
+	SetADSRAttack(ADSRAttackPotParm.Process());
+}
+
+void NoiseVoice::ProcessParm1()
+{
+	SetADSRDecay(ADSRDecayPotParm.Process());
+}
+
+void NoiseVoice::ProcessParm2()
+{
+	SetADSRSustain(ADSRSustainPotParm.Process());
+}
+
+void NoiseVoice::ProcessParm3()
+{
+	SetADSRRelease(ADSRReleasePotParm.Process());
+}
+
 

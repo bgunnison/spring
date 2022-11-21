@@ -29,9 +29,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using namespace daisy;
 using namespace daisysp;
 
-void HiHatVoice::Init(float SR) 
+void HiHatVoice::Init(DaisyPod *phw, float SR) 
 {
-	NullVoice::Init(SR);
+	NullVoice::Init(phw, SR);
 	polyphony = HIHAT_VOICE_POLYPHONY;
 	
 	for (uint8_t i = 0; i < polyphony; i++)
