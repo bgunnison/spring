@@ -24,12 +24,19 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include "midimap.h"
 
-MIDINoteMap AMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, A_ROOT_NOTE);
-MIDINoteMap BMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, B_ROOT_NOTE);
-MIDINoteMap CMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, C_ROOT_NOTE);
-MIDINoteMap DMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, D_ROOT_NOTE);
+MIDINoteMap AMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::A_ROOT_NOTE);
+MIDINoteMap BMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::B_ROOT_NOTE);
+MIDINoteMap CMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::C_ROOT_NOTE);
+MIDINoteMap DMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::D_ROOT_NOTE);
+MIDINoteMap EMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::E_ROOT_NOTE);
 
-void SetFCB1010MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt)
+MIDINoteMap AMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::A_ROOT_NOTE);
+MIDINoteMap BMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::B_ROOT_NOTE);
+MIDINoteMap CMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::C_ROOT_NOTE);
+MIDINoteMap DMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::D_ROOT_NOTE);
+MIDINoteMap EMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::E_ROOT_NOTE);
+
+void SetFCB1010MIDIMap(CCMIDINoteMap *noteMap)
 {
 	
 	// via the FCB-UNO Control Center
@@ -38,10 +45,14 @@ void SetFCB1010MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *
 	noteMap->Add(21, &BMajorPentNoteMap); 
 	noteMap->Add(20, &CMajorPentNoteMap); 
 	noteMap->Add(19, &DMajorPentNoteMap); 
-	// CC50 - CC56 : A - G major pentatonic
-	// page 01, maps notes to pentatonic major scale
-	// CC60 - CC66 :  A - G minor pentatonic
+	noteMap->Add(18, &EMajorPentNoteMap); 
 	
+	noteMap->Add(17, &AMinorPentNoteMap); 
+	noteMap->Add(16, &BMinorPentNoteMap); 
+	noteMap->Add(15, &CMinorPentNoteMap); 
+	noteMap->Add(14, &DMinorPentNoteMap); 
+	noteMap->Add(13, &EMinorPentNoteMap); 
+
 }
 
 

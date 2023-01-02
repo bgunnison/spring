@@ -31,7 +31,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /* proposed map
  
- 
 button1	picks what the selector switch rotates through. 
 selector leds		selects	
 --------------------------
@@ -91,10 +90,8 @@ void ControlMap::Init(DaisyPod *phw, Voices *pvoices, Filters *pfilts, float *pg
 	
 	knobsChanged = false;
 
-	
 	SetLEDs(RED_ON, RED_ON);
-	log("Control map init");
-				
+	log("Control map init");		
 }
 
 void ControlMap::Control()
@@ -106,7 +103,6 @@ void ControlMap::Control()
 		{
 			button1 = 0;
 		}
-		
 		
 		switch (button1)
 		{

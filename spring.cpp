@@ -132,10 +132,9 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in, AudioHandle::Interl
 
 }
 
-// Typical Switch case for Message Type.
 void HandleMidiMessage(MidiEvent m)
 {
-	//logMidiEvent(&m);
+	logMidiEvent(&m);
 	//if (m.channel != MIDI_CHANNEL)
 	//{
 	//	return;
@@ -145,9 +144,8 @@ void HandleMidiMessage(MidiEvent m)
 	{
 	case NoteOn:
 		{
-			//logMidiNote(&m);
 			NoteOnEvent p = m.AsNoteOn();
-			BlinkLEDs(100, LED_OFF, LED_OFF);
+			BlinkLEDs(50, LED_OFF, LED_OFF);
 			p = m.AsNoteOn();
 			p.note = noteMap.Process(p.note);
 			voice.NoteOn(&p); 					
@@ -165,9 +163,8 @@ void HandleMidiMessage(MidiEvent m)
 	case ControlChange:
 		{
 			ControlChangeEvent p = m.AsControlChange();
-			//log("CC: %d, v: %d", p.control_number, p.value);
-			ccmap.Invoke(p.control_number, p.value);
-			noteMap.Invoke(p.control_number, p.value);		
+			ccmap.Change(p.control_number, p.value);
+			noteMap.Change(p.control_number, p.value);		
 		}
 	default: break;
 	}
@@ -203,6 +200,8 @@ int main(void)
 	// make up your mind
 	//SetAlesisV125MIDIMap(&ccmap, &noteMap, &voice, &filt);
 	standAloneController.Init(&hw, &voice, &filt, &finalGainRight, &finalGainLeft);
+	SetFCB1010MIDIMap(&noteMap);
+
 		
 	log("Init end");
 

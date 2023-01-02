@@ -25,7 +25,48 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Note maps algorithms
 """
 
-chromatic = ['C',	'C#',	'D',	'D#',	'E',	'F',	'F#',	'G',	'G#',	'A',	'A#',	'B']
+chromatic =   ['C',	'C#',	'D',	'D#',	'E',	'F',	'F#',	'G',	'G#',	'A',	'A#',	'B']
+
+ #                   0                                                                                       11     
+c_chromatic =      ['C',	'C#',   'D',	'D#',	'E',	'F',	'F#',	'G',	'G#',	'A',	'A#',	'B',    ]
+c_maj_pent =       ['C',	'C',	'D',	'D',	'E',	'E',	'E',	'G',	'G',    'A',	'A',    'C1']
+c_maj_pentshift =  [0,	    -1,	    0,	    -1,	    0,	    -1,	    -2,	    0,	    -1,	    0,      -1,	    +1]
+c_min_pent =       ['C',	'C',	'D#',	'D#',	'F',	'F',	'F',	'G',	'G',    'A#',	'A#',    'C1']
+c_min_pentshift =  [0,	    -1,	    +1,	    0,	    +1,	    0,	    -1,	    0,	    -1,	    +1,      0,	    +1]
+
+        #             1       2      3                                                                     0  
+cs_chromatic =      ['C#',   'D',	'D#',	'E',	'F',	'F#',	'G',	'G#',	'A',	'A#',	'B',   'C'  ]
+cs_maj_pent =       ['C#',	'C#',	'D#',	'D#',	'F',	'F',	'F',	'G#',	'G#',   'A#',   'A#',  'A#']
+cs_maj_pentshift =  ['0',	'-1',	'0',	'-1',	'0',	'-1',	'-2',	'0',	'-1',	'0',    '-1',	'-2']
+
+#                   2                                                                               0        1
+d_chromatic =      ['D',	'D#',	'E',	'F',	'F#',	'G',	'G#',	'A',	'A#',	'B',    'C',	'C#']
+d_maj_pent =       ['D',	'D',	'E',	'E',	'F#',	'F#',	'F#',	'A',	'A',    'B',	'B',    'B']
+d_maj_pentshift =  ['0',	'-1',	'0',	'-1',	'0',	'-1',	'-2',	'0',	'-1',	'0',    '-1',	'-2']
+ 
+
+c_maj_pentshift =  [0,	    -1,	    0,	    -1,	    0,	    -1,	    -2,	    0,	    -1,	    0,      -1,	    +1]
+root = 2
+
+def run_major_pent():
+    
+    for mn in range(127):
+        i = (mn - root) % 12
+        if i < 0:
+            i = 0
+
+        o = mn + c_min_pentshift[i]
+        if o < 0:
+            o = root
+
+        lni = chromatic[mn % 12]
+        lno = chromatic[o % 12]
+        
+        print(f'NoteIn: {mn} {lni}, NoteOut: {o}, {lno}')
+
+
+
+
 def run_maps():
     print('Major pentatonic')
     map = [0,2,4,7,9]
@@ -43,6 +84,6 @@ def run_maps():
 
 
 if __name__ == "__main__":
-    run_maps()
+    run_major_pent()
 
 

@@ -54,7 +54,7 @@ public:
 	}
 	
 	// called with every CC event to see if its mapped and send the value to the enumerated function in the mapable class. 
-	void Invoke(uint8_t cc, uint8_t value)
+	void Change(uint8_t cc, uint8_t value)
 	{
 		if (cc >= 127 || map[cc].mapobj == NULL) 
 		{
@@ -100,29 +100,6 @@ private:
 };
 
 
-typedef enum
-{
-	C_ROOT_NOTE = 0,
-	CS_ROOT_NOTE,	
-	D_ROOT_NOTE,	
-	DS_ROOT_NOTE,
-	E_ROOT_NOTE,
-	F_ROOT_NOTE,
-	FS_ROOT_NOTE,
-	G_ROOT_NOTE,
-	GS_ROOT_NOTE,
-	A_ROOT_NOTE,
-	AS_ROOT_NOTE,
-	B_ROOT_NOTE,
-}MIDI_ROOT_NOTE;
-
-
-// add 12 for upper octaves
-// major pent: root, 2nd, 3rd, 5th, and 6th intervals
-// C	C#	D	D#	E	F	F#	G	G#	A	A#	B
-// 0    1   2   3   4   5   6   7   8   9   10  11
-// 0    0   2   2   5   5   6   6   9   9   12  12 <- one way to do it, but
-// 0    2   5   6   9   12  14  17  ... <- root is C, this is a better way
 
 
 class MIDINoteMap
@@ -131,13 +108,39 @@ public:
 	typedef enum
 	{
 		NOTE_MAP_NONE = 0,
-		NOTE_MAP_MAJOR_PENTATONIC
+		NOTE_MAP_MAJOR_PENTATONIC,
+		NOTE_MAP_MINOR_PENTATONIC
 	}NOTE_MAP_TYPE;
 	
-	MIDINoteMap(NOTE_MAP_TYPE nmt, MIDI_ROOT_NOTE rootNote) { map_type = nmt; root = rootNote; }
+	typedef enum
+	{
+		C_ROOT_NOTE  = 0,
+		CS_ROOT_NOTE,	
+		D_ROOT_NOTE,	
+		DS_ROOT_NOTE,
+		E_ROOT_NOTE,
+		F_ROOT_NOTE,
+		FS_ROOT_NOTE,
+		G_ROOT_NOTE,
+		GS_ROOT_NOTE,
+		A_ROOT_NOTE,
+		AS_ROOT_NOTE,
+		B_ROOT_NOTE,
+	}MIDI_ROOT_NOTE;
+
+	MIDINoteMap(NOTE_MAP_TYPE map, MIDI_ROOT_NOTE r)
+	{
+		Init();
+		map_type = map; 
+		root = r;
+	}
 	
-	// TODO switch in note map types...
-	
+	void Init() { octave = 0; map_type = NOTE_MAP_NONE; root = C_ROOT_NOTE; }	
+	void SetType(NOTE_MAP_TYPE nmt) { map_type = nmt; }
+	void SetRoot(MIDI_ROOT_NOTE rootNote) { root = rootNote; }
+	void SetOctave(uint8_t s) { octave = s; }
+
+		
 	uint8_t Process(uint8_t noteIn)
 	{
 		switch (map_type)
@@ -147,11 +150,37 @@ public:
 			return noteIn;
 			
 		case NOTE_MAP_MAJOR_PENTATONIC:
+		case NOTE_MAP_MINOR_PENTATONIC:
 			{
-				uint8_t base = noteIn / sizeof(MajorPentNoteMap); //truncation towards zero
-				uint8_t i = noteIn - (base * sizeof(MajorPentNoteMap));
-	
-				uint8_t noteOut = root + (base * 12) + MajorPentNoteMap[i];
+				uint8_t i = (noteIn - root) % 12;
+				if (i < 0) 
+				{
+					i = 0;
+				}
+				
+				uint8_t noteOut;
+
+				if (map_type == NOTE_MAP_MAJOR_PENTATONIC)
+				{
+					noteOut = noteIn + major_pent_shift[i];					
+				}
+				
+				if (map_type == NOTE_MAP_MINOR_PENTATONIC)
+				{
+					noteOut = noteIn + minor_pent_shift[i];					
+				}
+				
+				if (noteOut < 0)
+				{
+					noteOut = root;
+				}
+				
+				noteOut += (octave * 12);
+				if (noteOut > 127)
+				{
+					noteOut = 127;
+				}
+				
 				log("noteIn: %d, NoteOut: %d", noteIn, noteOut);
 				return noteOut;
 			}
@@ -161,7 +190,13 @@ public:
 private:
 	NOTE_MAP_TYPE map_type;
 	uint8_t root;
-	uint8_t MajorPentNoteMap[5] = { 0, 2, 4, 7, 9 }; 
+	int8_t octave; // 0 is no octave shift
+	// major pent: root, 2nd, 3rd, 5th, and 6th intervals
+    // chromatic                    C	 C#	 D	D#	E	F  F#  G  G#  A	 A#	  B
+    // CMaj pentatonic              C	 C	 D	D	E	E  E   G  G  A	 A	  
+	const int8_t major_pent_shift[12] = {0, -1, 0, -1, 0, -1, -2, 0, -1, 0, -1, +1 }; // semi tones shift
+	const int8_t minor_pent_shift[12] = {0, -1, 1,  0, 1,  0, -1, 0, -1, 1,  0,  1 }; // semi tones shift
+  
 };
 
 
@@ -169,9 +204,10 @@ private:
 class CCMIDINoteMap
 {
 public:
+
 	void Init() { for (uint8_t i = 0; i < 127; i++) map[i] = NULL; }
 	void Add(uint8_t cc, MIDINoteMap *noteMap) {if (cc >= 127) return; map[cc] = noteMap; }
-	void Invoke(uint8_t cc, uint8_t value)
+	void Change(uint8_t cc, uint8_t value)
 	{
 		if (cc >= 127) 
 		{
@@ -185,6 +221,14 @@ public:
 		else
 		{
 			setCC = cc;			
+		}
+	}
+	
+	void OctaveShift(uint8_t s)
+	{
+		if (map[setCC] != NULL)
+		{
+			map[setCC]->SetOctave(s);
 		}
 	}
 	
@@ -206,6 +250,6 @@ private:
 };
 
 void SetAlesisV125MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt);
-void SetFCB1010MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt);
+void SetFCB1010MIDIMap(CCMIDINoteMap *noteMap);
 
 
