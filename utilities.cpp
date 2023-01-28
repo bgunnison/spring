@@ -39,7 +39,7 @@ void log(const char* format, ...)
 	va_list va;
 	
 	va_start(va, format);
-	vsnprintf(buff, 512, format, va);
+	vsnprintf(buff, 510, format, va);
 	va_end(va);
 	
 	strncat(buff, "\n", 512);
@@ -47,6 +47,30 @@ void log(const char* format, ...)
 	hw.seed.usb_handle.TransmitInternal((uint8_t *)buff, strlen(buff));
 }
 
+const char *GetNoteName(uint8_t n)
+{	
+	const char *names[12] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+	
+	if (n > 11)
+	{
+		return "?";
+	}
+	
+	return names[n];
+
+}
+
+char * GetMidiNoteName(uint8_t n)
+{
+	static char str[] = "C0";
+	
+	uint8_t noteName = n % 12;
+	uint8_t octave = (n / 12) - 1;
+	
+	sprintf(str, "%s%d", GetNoteName(noteName), octave);
+	
+	return str;
+}
 
 // todo class up and implement midi map parser as well as commands such as get current settings etc. 
 // UsbHandle::ReceiveCallback

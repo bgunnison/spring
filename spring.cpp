@@ -93,6 +93,7 @@ void logMidiEvent(MidiEvent *m)
 }
 
 
+
 void UpdateControls()
 {
 	hw.ProcessAnalogControls();
@@ -134,7 +135,7 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in, AudioHandle::Interl
 
 void HandleMidiMessage(MidiEvent m)
 {
-	logMidiEvent(&m);
+	//logMidiEvent(&m);
 	//if (m.channel != MIDI_CHANNEL)
 	//{
 	//	return;
@@ -147,7 +148,14 @@ void HandleMidiMessage(MidiEvent m)
 			NoteOnEvent p = m.AsNoteOn();
 			BlinkLEDs(50, LED_OFF, LED_OFF);
 			p = m.AsNoteOn();
-			p.note = noteMap.Process(p.note);
+			//log("Note in: %s", GetMidiNoteName(p.note));	
+			p.note = noteMap.Process(p.note, true);
+			log("Note out: %s", GetMidiNoteName(p.note));	
+			if (p.note > 127)
+			{
+				break; // so we can use notes as control
+			}
+
 			voice.NoteOn(&p); 					
 		}
 		break;
@@ -155,10 +163,15 @@ void HandleMidiMessage(MidiEvent m)
 	case NoteOff:
 		{
 			NoteOffEvent p = m.AsNoteOff();
-			p.note = noteMap.Process(p.note);
+			p.note = noteMap.Process(p.note, false);
+			if (p.note > 127)
+			{
+				break; // so we can use notes as control
+			}
+			
 			voice.NoteOff(&p);
-			break;
 		}
+		break;
 
 	case ControlChange:
 		{
@@ -166,7 +179,10 @@ void HandleMidiMessage(MidiEvent m)
 			ccmap.Change(p.control_number, p.value);
 			noteMap.Change(p.control_number, p.value);		
 		}
-	default: break;
+		break;
+		
+	default: 
+		break;
 	}
 }
 
@@ -194,11 +210,16 @@ int main(void)
 	
 	ccmap.Init();
 	pcmap.Init();
-	noteMap.Init();
-	
 	//ccmap.Add(7, SetCCFinalGain);
 	// make up your mind
 	//SetAlesisV125MIDIMap(&ccmap, &noteMap, &voice, &filt);
+	// This setup uses the pod controls to select voice, filter and change parameters via the pots
+	// the midi map is selectable via the FCB1010 switches to be major or minor pentatonic scales. 
+	// A alelesis samplepad (drumpad) is setupt o play the pentatonic scale with its two upper pads
+	// set to the octave up and down select notes (which are not played)
+	noteMap.Init();
+	noteMap.SetOctaveUpDownNotes(40, 41);
+	
 	standAloneController.Init(&hw, &voice, &filt, &finalGainRight, &finalGainLeft);
 	SetFCB1010MIDIMap(&noteMap);
 

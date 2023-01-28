@@ -28,6 +28,9 @@ using namespace daisy;
 
 
 void log(const char* format, ...);
+const char *GetNoteName(uint8_t n);
+char * GetMidiNoteName(uint8_t n);
+
 void RotateLED(uint8_t led);
 void LEDOff(uint8_t led);
 

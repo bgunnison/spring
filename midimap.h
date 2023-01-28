@@ -138,7 +138,24 @@ public:
 	void Init() { octave = 0; map_type = NOTE_MAP_NONE; root = C_ROOT_NOTE; }	
 	void SetType(NOTE_MAP_TYPE nmt) { map_type = nmt; }
 	void SetRoot(MIDI_ROOT_NOTE rootNote) { root = rootNote; }
-	void SetOctave(uint8_t s) { octave = s; }
+	
+	int8_t IncrementOctave() 
+	{ 
+		if (octave == 5) 
+			return octave; 
+		
+		octave++; 
+		return octave; 
+	}
+	
+	int8_t DecrementOctave() 
+	{ 
+		if (octave == 1) 
+			return octave; 
+		
+		octave--; 
+		return octave; 
+	}
 
 		
 	uint8_t Process(uint8_t noteIn)
@@ -152,7 +169,7 @@ public:
 		case NOTE_MAP_MAJOR_PENTATONIC:
 		case NOTE_MAP_MINOR_PENTATONIC:
 			{
-				uint8_t i = (noteIn - root) % 12;
+				uint8_t i = noteIn  % 12;
 				if (i < 0) 
 				{
 					i = 0;
@@ -170,6 +187,8 @@ public:
 					noteOut = noteIn + minor_pent_shift[i];					
 				}
 				
+				noteOut += root;
+				
 				if (noteOut < 0)
 				{
 					noteOut = root;
@@ -181,21 +200,36 @@ public:
 					noteOut = 127;
 				}
 				
-				log("noteIn: %d, NoteOut: %d", noteIn, noteOut);
+				//log("noteIn: %d, NoteOut: %d", noteIn, noteOut);
 				return noteOut;
 			}
 		}
 	}
+	
+	void LogInfo()
+	{
+		//log("Midi note map: %s %s", GetNoteName(root), typeName[map_type]);
+	}
+
 
 private:
 	NOTE_MAP_TYPE map_type;
 	uint8_t root;
 	int8_t octave; // 0 is no octave shift
 	// major pent: root, 2nd, 3rd, 5th, and 6th intervals
-    // chromatic                    C	 C#	 D	D#	E	F  F#  G  G#  A	 A#	  B
-    // CMaj pentatonic              C	 C	 D	D	E	E  E   G  G  A	 A	  
-	const int8_t major_pent_shift[12] = {0, -1, 0, -1, 0, -1, -2, 0, -1, 0, -1, +1 }; // semi tones shift
-	const int8_t minor_pent_shift[12] = {0, -1, 1,  0, 1,  0, -1, 0, -1, 1,  0,  1 }; // semi tones shift
+	//									48	 49  50 51  52  53 54  55 56  57 58   59
+    // chromatic						C	 C#	 D	D#	E	F  F#  G  G#  A	 A#	  B
+	
+	//									48   48 50  50 52  52  52 55  55 57  57  60
+    // CMaj pentatonic				    C	 C	D	D  E   E   E  G   G  A	 A	 C  
+	const int8_t major_pent_shift[12] = {0, -1, 0, -1, 0, -1, -2, 0, -1, 0, -1,  1 }; // semi tones shift
+	
+	//									48   48 51  51 53  53  53  55  55 58  58  60
+    // CMin pentatonic				    C	 C	D#	D#  F   F   F  G   G  A#  A#  C  
+	const int8_t minor_pent_shift[12] = {0, -1, 1,  0,  1,  0, -1, 0, -1, 1,  0,  1 }; // semi tones shift
+	
+	const char *typeName[3] = { "None", "Major", "Minor" };
+	
   
 };
 
@@ -205,8 +239,24 @@ class CCMIDINoteMap
 {
 public:
 
-	void Init() { for (uint8_t i = 0; i < 127; i++) map[i] = NULL; }
-	void Add(uint8_t cc, MIDINoteMap *noteMap) {if (cc >= 127) return; map[cc] = noteMap; }
+	void Init() 
+	{ 
+		for (uint8_t i = 0; i < 127; i++)
+		{
+			map[i] = NULL; 
+		}
+		
+		upOctaveNote = 128;
+		downOctaveNote = 128;
+	}
+	
+	void Add(uint8_t cc, MIDINoteMap *noteMap) 
+	{
+		if (cc >= 127) return; 
+		
+		map[cc] = noteMap; 
+	}
+	
 	void Change(uint8_t cc, uint8_t value)
 	{
 		if (cc >= 127) 
@@ -220,23 +270,37 @@ public:
 		}
 		else
 		{
-			setCC = cc;			
+			setCC = cc;	
+			map[cc]->LogInfo();
 		}
 	}
 	
-	void OctaveShift(uint8_t s)
+	void SetOctaveUpDownNotes(uint8_t d, uint8_t u)
 	{
-		if (map[setCC] != NULL)
-		{
-			map[setCC]->SetOctave(s);
-		}
+		upOctaveNote = u;
+		downOctaveNote = d;
 	}
 	
-	uint8_t Process(uint8_t  NoteIn)
+	
+	uint8_t Process(uint8_t  NoteIn, bool on)
 	{
 		if (map[setCC] == NULL)
 		{
 			return NoteIn;
+		}
+		
+		if (NoteIn == upOctaveNote && on == true)
+		{
+			int8_t o = map[setCC]->IncrementOctave();
+			log("Octave inc: %d", o);
+			return 128;
+		}
+		
+		if (NoteIn == downOctaveNote && on == true)
+		{
+			int8_t o = map[setCC]->DecrementOctave();
+			log("Octave inc: %d", o);
+			return 128;
 		}
 		
 		return map[setCC]->Process(NoteIn);
@@ -247,6 +311,10 @@ private:
 	MIDINoteMap *map[127];
 	uint8_t setCC;
 	
+	uint8_t upOctaveNote;
+	uint8_t downOctaveNote;
+
+		
 };
 
 void SetAlesisV125MIDIMap(CCMIDIMap *ccmap, CCMIDINoteMap *noteMap, CCMIDIMapable *voice, CCMIDIMapable *filt);
