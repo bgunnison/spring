@@ -29,20 +29,36 @@ MIDINoteMap BMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMa
 MIDINoteMap CMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::C_ROOT_NOTE);
 MIDINoteMap DMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::D_ROOT_NOTE);
 MIDINoteMap EMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::E_ROOT_NOTE);
+MIDINoteMap FMajorPentNoteMap(MIDINoteMap::NOTE_MAP_MAJOR_PENTATONIC, MIDINoteMap::F_ROOT_NOTE);
 
 MIDINoteMap AMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::A_ROOT_NOTE);
 MIDINoteMap BMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::B_ROOT_NOTE);
 MIDINoteMap CMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::C_ROOT_NOTE);
 MIDINoteMap DMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::D_ROOT_NOTE);
 MIDINoteMap EMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::E_ROOT_NOTE);
+MIDINoteMap GMinorPentNoteMap(MIDINoteMap::NOTE_MAP_MINOR_PENTATONIC, MIDINoteMap::G_ROOT_NOTE);
 
 void SetFCB1010MIDIMap(CCMIDINoteMap *noteMap)
 {
 	
 	// via the FCB-UNO Control Center
 	// page 00, maps notes to pentatonic major scale
-	noteMap->Add(22, &AMajorPentNoteMap); 
-	noteMap->Add(21, &BMajorPentNoteMap); 
+	//                                      FCB button
+	noteMap->Add(22, &DMinorPentNoteMap); // 1
+	noteMap->Add(21, &EMajorPentNoteMap); // 2
+	noteMap->Add(20, &FMajorPentNoteMap); 
+	noteMap->Add(19, &GMinorPentNoteMap); 
+	noteMap->Add(18, &AMinorPentNoteMap); 
+	
+	noteMap->Add(17, &BMinorPentNoteMap); 
+	noteMap->Add(16, &CMajorPentNoteMap); 
+	//noteMap->Add(15, &CMinorPentNoteMap); 
+	//noteMap->Add(14, &DMinorPentNoteMap); 
+	//noteMap->Add(13, &EMinorPentNoteMap); // 10
+
+	/*
+	noteMap->Add(22, &AMajorPentNoteMap); // 1
+	noteMap->Add(21, &BMajorPentNoteMap);  // 2
 	noteMap->Add(20, &CMajorPentNoteMap); 
 	noteMap->Add(19, &DMajorPentNoteMap); 
 	noteMap->Add(18, &EMajorPentNoteMap); 
@@ -51,8 +67,8 @@ void SetFCB1010MIDIMap(CCMIDINoteMap *noteMap)
 	noteMap->Add(16, &BMinorPentNoteMap); 
 	noteMap->Add(15, &CMinorPentNoteMap); 
 	noteMap->Add(14, &DMinorPentNoteMap); 
-	noteMap->Add(13, &EMinorPentNoteMap); 
-
+	noteMap->Add(13, &EMinorPentNoteMap);  // 10
+*/
 }
 
 

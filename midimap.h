@@ -150,7 +150,7 @@ public:
 	
 	int8_t DecrementOctave() 
 	{ 
-		if (octave == 1) 
+		if (octave == -4) 
 			return octave; 
 		
 		octave--; 
